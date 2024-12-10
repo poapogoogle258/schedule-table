@@ -12,6 +12,6 @@ type Tasks struct {
 	Status      int8      `gorm:"column:status" json:"status"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-	Person      Members   `gorm:"foreignKey:MemberId"`
-	Description Schedules `gorm:"foreignKey:ScheduleId"`
+	Person      Members   `gorm:"foreignKey:member_id" json:"person"`
+	Description Schedules `gorm:"foreignKey:schedule_id" json:"description"`
 }

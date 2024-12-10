@@ -13,5 +13,5 @@ type Leaves struct {
 	Status      int8      `gorm:"column:status" json:"status"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
-	Member      Members   `gorm:"references:Id"`
+	Member      Members   `gorm:"references:id"`
 }
