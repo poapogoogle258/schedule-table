@@ -13,9 +13,8 @@ import (
 func main() {
 	godotenv.Load()
 
-	addr := fmt.Sprint(os.Getenv("IP"), ":", os.Getenv("PORT"))
-
 	r := gin.Default()
+	addr := fmt.Sprintf("%s:%s", os.Getenv("IP"), os.Getenv("PORT"))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -24,8 +23,6 @@ func main() {
 			"data":       "welcome to schedule tables project.",
 		})
 	})
-
-	fmt.Println(addr)
 
 	r.Run(addr) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 
