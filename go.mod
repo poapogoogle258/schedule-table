@@ -1,4 +1,4 @@
-module github.com/poapogoogle258/schedule_table
+module schedule_table
 
 go 1.22.5
 

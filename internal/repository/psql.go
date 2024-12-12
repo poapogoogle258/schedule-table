@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/poapogoogle258/schedule_table/internal/model"
+	"schedule_table/internal/model/dao"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -26,7 +27,7 @@ func ConnectPostgresql() (*gorm.DB, error) {
 		fmt.Println(err)
 	}
 
-	migrate_err := db.AutoMigrate(&model.Users{}, &model.Leaves{}, &model.Members{}, &model.Schedules{}, &model.Responsible{}, &model.Tasks{}, &model.Calendars{})
+	migrate_err := db.AutoMigrate(&dao.Users{}, &dao.Leaves{}, &dao.Members{}, &dao.Schedules{}, &dao.Responsible{}, &dao.Tasks{}, &dao.Calendars{})
 
 	if migrate_err != nil {
 		fmt.Println(migrate_err)
