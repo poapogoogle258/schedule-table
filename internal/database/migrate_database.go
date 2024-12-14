@@ -15,6 +15,12 @@ import (
 
 func MigrateSetUpAndInitData(db *gorm.DB) error {
 
+	dropTable_error := db.Migrator().DropTable(&dao.Tasks{}, &dao.Responsible{}, &dao.Schedules{}, &dao.Leaves{}, &dao.Members{}, &dao.Calendars{}, &dao.Users{})
+
+	if dropTable_error != nil {
+		return dropTable_error
+	}
+
 	migrate_err := db.AutoMigrate(&dao.Users{}, &dao.Leaves{}, &dao.Members{}, &dao.Schedules{}, &dao.Responsible{}, &dao.Tasks{}, &dao.Calendars{})
 
 	if migrate_err != nil {

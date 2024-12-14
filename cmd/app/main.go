@@ -2,35 +2,19 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
+	"schedule_table/internal/router"
 
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-
-	"schedule_table/internal/database"
 )
 
 func main() {
 	godotenv.Load()
 
-	r := gin.Default()
+	server := router.NewRouter(Injector())
+
 	addr := fmt.Sprintf("%s:%s", os.Getenv("IP"), os.Getenv("PORT"))
 
-	_, err := database.ConnectPostgresql()
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"statusCode": 200,
-			"message":    "success",
-			"data":       "welcome to schedule tables project.",
-		})
-	})
-
-	r.Run(addr) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	server.Run(addr) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 
 }

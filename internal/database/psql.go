@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func ConnectPostgresql() (*gorm.DB, error) {
+func ConnectPostgresql() *gorm.DB {
 
 	var (
 		name     = os.Getenv("DB_NAME")
@@ -19,7 +19,7 @@ func ConnectPostgresql() (*gorm.DB, error) {
 		dsn      = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Bangkok", host, username, password, name, port)
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, _ := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if os.Getenv("MIGRATE_SETUP") == "init" {
 		migrate_err := MigrateSetUpAndInitData(db)
@@ -29,6 +29,6 @@ func ConnectPostgresql() (*gorm.DB, error) {
 		}
 	}
 
-	return db, err
+	return db
 
 }
