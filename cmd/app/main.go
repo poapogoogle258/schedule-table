@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"schedule_table/internal/repository"
+	"schedule_table/internal/database"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	r := gin.Default()
 	addr := fmt.Sprintf("%s:%s", os.Getenv("IP"), os.Getenv("PORT"))
 
-	_, err := repository.ConnectPostgresql()
+	_, err := database.ConnectPostgresql()
 
 	if err != nil {
 		fmt.Println(err)

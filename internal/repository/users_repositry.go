@@ -14,10 +14,6 @@ type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func (u UserRepositoryImpl) FindAllUser() ([]dao.Users, error) {
-
-}
-
 func UserRepositoryInit(db *gorm.DB) *UserRepositoryImpl {
 	return &UserRepositoryImpl{
 		db: db,

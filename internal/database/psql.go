@@ -1,10 +1,8 @@
-package repository
+package database
 
 import (
 	"fmt"
 	"os"
-
-	"schedule_table/internal/model/dao"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -23,14 +21,12 @@ func ConnectPostgresql() (*gorm.DB, error) {
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	if err != nil {
-		fmt.Println(err)
-	}
+	if os.Getenv("MIGRATE_SETUP") == "init" {
+		migrate_err := MigrateSetUpAndInitData(db)
 
-	migrate_err := db.AutoMigrate(&dao.Users{}, &dao.Leaves{}, &dao.Members{}, &dao.Schedules{}, &dao.Responsible{}, &dao.Tasks{}, &dao.Calendars{})
-
-	if migrate_err != nil {
-		fmt.Println(migrate_err)
+		if migrate_err != nil {
+			fmt.Println(migrate_err)
+		}
 	}
 
 	return db, err

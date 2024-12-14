@@ -18,7 +18,9 @@ type UsersServiceImpl struct {
 	u repository.UserRepository
 }
 
-func (u UsersServiceImpl) GetUserId(c *gin.Context) {
-	user_id := c.Query("user_id")
+type RegisterAccountRequest struct {
+}
+
+func (u UsersServiceImpl) RegisterAccount(c *gin.Context) {
 
 }

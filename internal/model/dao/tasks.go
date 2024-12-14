@@ -1,12 +1,18 @@
 package dao
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type Tasks struct {
-	Id          uint      `gorm:"column:id; primary_key; not null" json:"id"`
-	CalendarId  uint      `gorm:"column:calendar_id" json:"calendar_id"`
-	ScheduleId  uint      `gorm:"column:schedule_id" json:"schedule_id"`
-	MemberId    uint      `gorm:"column:member_id" json:"member_id"`
+	gorm.Model
+	Id          uuid.UUID `gorm:"type:uuid; column:id; primary_key; uniqueIndex" json:"id"`
+	CalendarId  uuid.UUID `gorm:"type:uuid;column:calendar_id" json:"calendar_id"`
+	ScheduleId  uuid.UUID `gorm:"type:uuid;column:schedule_id" json:"schedule_id"`
+	MemberId    uuid.UUID `gorm:"type:uuid;column:member_id" json:"member_id"`
 	Start       time.Time `gorm:"column:start" json:"start"`
 	End         time.Time `gorm:"column:end" json:"end"`
 	Status      int8      `gorm:"column:status" json:"status"`
