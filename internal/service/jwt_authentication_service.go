@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"time"
 
@@ -13,7 +13,8 @@ type JWTService interface {
 	GenerateToken(userId, name, email string) string
 	ValidateToken(token string) (*jwt.Token, error)
 }
-type authCustomClaims struct {
+
+type AuthCustomClaims struct {
 	UserId string `json:"user_id"`
 	Email  string `json:"email"`
 	Name   string `json:"name"`
@@ -34,7 +35,7 @@ func getSecretKey() string {
 }
 
 func (service *jwtServices) GenerateToken(userId, name, email string) string {
-	claims := &authCustomClaims{
+	claims := &AuthCustomClaims{
 		userId,
 		email,
 		name,
@@ -55,10 +56,12 @@ func (service *jwtServices) GenerateToken(userId, name, email string) string {
 }
 
 func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, error) {
-	return jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
-		if _, isvalid := token.Method.(*jwt.SigningMethodHMAC); !isvalid {
-			return nil, fmt.Errorf("Invalid token", token.Header["alg"])
+	return jwt.ParseWithClaims(encodedToken, &AuthCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, isValid := token.Method.(*jwt.SigningMethodHMAC); !isValid {
+			return nil, errors.New("invalid token")
+
 		}
+
 		return []byte(service.secretKey), nil
 	})
 

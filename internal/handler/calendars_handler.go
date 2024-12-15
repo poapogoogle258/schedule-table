@@ -4,7 +4,6 @@ import (
 	"schedule_table/internal/repository"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type CalendarsHandler interface {
@@ -20,13 +19,11 @@ type CalendarsHandlerImpl struct {
 
 func (s *CalendarsHandlerImpl) GetMyCalendar(c *gin.Context) {
 
-	userId, _ := uuid.Parse(c.Param("userId"))
-
-	calendar := s.calRepo.FindByOwnerId(userId)
-	if calendar == nil {
+	if userId, check := c.Keys["token_userId"]; check {
+		calendar := s.calRepo.FindByOwnerId(userId.(string))
 		c.JSON(200, calendar)
 	} else {
-		c.JSON(200, calendar)
+		c.JSON(200, nil)
 	}
 
 }

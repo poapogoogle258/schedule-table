@@ -8,18 +8,18 @@ import (
 )
 
 type CalendarRepository interface {
-	FindByOwnerId(ownerId uuid.UUID) *dao.Calendars
+	FindByOwnerId(ownerId string) *dao.Calendars
 }
 
 type calendarRepository struct {
 	db *gorm.DB
 }
 
-func (c *calendarRepository) FindByOwnerId(ownerId uuid.UUID) *dao.Calendars {
+func (c *calendarRepository) FindByOwnerId(ownerId string) *dao.Calendars {
 
 	var calendar *dao.Calendars
 
-	user_uuid, _ := uuid.Parse("238e921d-8362-4232-847c-bf747465cdaf")
+	user_uuid, _ := uuid.Parse(ownerId)
 
 	c.db.Preload("Leaves").Preload("Schedules").Preload("Tasks").Preload("Members").Find(&calendar, "user_id = ?", user_uuid)
 

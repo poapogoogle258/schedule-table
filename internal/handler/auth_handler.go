@@ -12,6 +12,7 @@ import (
 
 type AuthHandler interface {
 	Login(c *gin.Context)
+	ValidateToken(c *gin.Context)
 }
 
 type authHandler struct {
@@ -43,6 +44,33 @@ func (s *authHandler) Login(c *gin.Context) {
 		})
 	} else {
 		c.JSON(http.StatusForbidden, gin.H{})
+	}
+
+}
+
+func (s *authHandler) ValidateToken(c *gin.Context) {
+
+	const BEARER_SCHEMA = "Bearer "
+	authHeader := c.GetHeader("Authorization")
+	tokenString := authHeader[len(BEARER_SCHEMA):]
+
+	token, err := s.jwtService.ValidateToken(tokenString)
+
+	if token.Valid {
+		claims := token.Claims.(*service.AuthCustomClaims)
+
+		c.JSON(http.StatusOK, gin.H{
+			"statusCode": http.StatusOK,
+			"message":    "success",
+			"data":       claims,
+		})
+
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"message":    err.Error(),
+		})
+
 	}
 
 }
