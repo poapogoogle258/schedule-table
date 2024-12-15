@@ -12,6 +12,7 @@ import (
 	"schedule_table/internal/handler"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/router"
+	"schedule_table/internal/service"
 )
 
 // Injectors from wire.go:
@@ -20,8 +21,12 @@ func Injector() *router.Handlers {
 	db := database.ConnectPostgresql()
 	calendarRepository := repository.NewCalendarRepository(db)
 	calendarsHandler := handler.NewCalendarsHandler(calendarRepository)
+	jwtService := service.NewJWTAuthService()
+	userRepository := repository.NewUserRepository(db)
+	authHandler := handler.NewAuthHandler(jwtService, userRepository)
 	handlers := &router.Handlers{
 		Calendar: calendarsHandler,
+		Auth:     authHandler,
 	}
 	return handlers
 }
@@ -30,4 +35,6 @@ func Injector() *router.Handlers {
 
 var (
 	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository)
+
+	authSet = wire.NewSet(handler.NewAuthHandler, service.NewJWTAuthService, repository.NewUserRepository)
 )

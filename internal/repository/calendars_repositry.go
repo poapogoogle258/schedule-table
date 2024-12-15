@@ -7,11 +7,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type CalendarRepository struct {
+type CalendarRepository interface {
+	FindByOwnerId(ownerId uuid.UUID) *dao.Calendars
+}
+
+type calendarRepository struct {
 	db *gorm.DB
 }
 
-func (c *CalendarRepository) FindByOwnerId(ownerId uuid.UUID) *dao.Calendars {
+func (c *calendarRepository) FindByOwnerId(ownerId uuid.UUID) *dao.Calendars {
 
 	var calendar *dao.Calendars
 
@@ -23,8 +27,8 @@ func (c *CalendarRepository) FindByOwnerId(ownerId uuid.UUID) *dao.Calendars {
 
 }
 
-func NewCalendarRepository(db *gorm.DB) *CalendarRepository {
-	return &CalendarRepository{
+func NewCalendarRepository(db *gorm.DB) CalendarRepository {
+	return &calendarRepository{
 		db: db,
 	}
 }

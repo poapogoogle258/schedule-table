@@ -12,7 +12,7 @@ type CalendarsHandler interface {
 }
 
 type CalendarsHandlerImpl struct {
-	calRepo *repository.CalendarRepository
+	calRepo repository.CalendarRepository
 }
 
 // func (s *CalendarsService) GenerateTasks(start time.Time, end time.Time, calendar dao.Calendars) []*dao.Tasks {
@@ -31,7 +31,7 @@ func (s *CalendarsHandlerImpl) GetMyCalendar(c *gin.Context) {
 
 }
 
-func NewCalendarsHandler(calRepo *repository.CalendarRepository) CalendarsHandler {
+func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {
 	return &CalendarsHandlerImpl{
 		calRepo: calRepo,
 	}

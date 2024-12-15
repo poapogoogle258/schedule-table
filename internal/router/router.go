@@ -8,6 +8,7 @@ import (
 
 type Handlers struct {
 	Calendar handler.CalendarsHandler
+	Auth     handler.AuthHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -21,6 +22,12 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	{
 		user := api.Group("/calendars")
 		user.GET("/default", handlers.Calendar.GetMyCalendar)
+	}
+
+	auth := router.Group("/auth")
+
+	{
+		auth.POST("/login", handlers.Auth.Login)
 	}
 
 	return router
