@@ -15,7 +15,7 @@ type AuthHandler interface {
 	ValidateToken(c *gin.Context)
 }
 
-type authHandler struct {
+type AuthHandlerImpl struct {
 	jwtService service.JWTService
 	userRepo   repository.UserRepository
 }
@@ -25,14 +25,14 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-func (s *authHandler) Login(c *gin.Context) {
+func (s *AuthHandlerImpl) Login(c *gin.Context) {
+
 	var request loginRequest
 	err := c.ShouldBind(&request)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"message": "no data found",
 		})
-
 	}
 
 	user := s.userRepo.FineUserEmail(request.Email)
@@ -48,7 +48,7 @@ func (s *authHandler) Login(c *gin.Context) {
 
 }
 
-func (s *authHandler) ValidateToken(c *gin.Context) {
+func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 
 	const BEARER_SCHEMA = "Bearer "
 	authHeader := c.GetHeader("Authorization")
@@ -75,8 +75,8 @@ func (s *authHandler) ValidateToken(c *gin.Context) {
 
 }
 
-func NewAuthHandler(jwtService service.JWTService, userRepo repository.UserRepository) AuthHandler {
-	return &authHandler{
+func NewAuthHandler(jwtService *service.JwtServicesImpl, userRepo *repository.UserRepositoryImpl) *AuthHandlerImpl {
+	return &AuthHandlerImpl{
 		jwtService,
 		userRepo,
 	}

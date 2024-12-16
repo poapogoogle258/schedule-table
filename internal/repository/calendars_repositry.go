@@ -11,11 +11,11 @@ type CalendarRepository interface {
 	FindByOwnerId(ownerId string) *dao.Calendars
 }
 
-type calendarRepository struct {
+type CalendarRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func (c *calendarRepository) FindByOwnerId(ownerId string) *dao.Calendars {
+func (c *CalendarRepositoryImpl) FindByOwnerId(ownerId string) *dao.Calendars {
 
 	var calendar *dao.Calendars
 
@@ -27,8 +27,8 @@ func (c *calendarRepository) FindByOwnerId(ownerId string) *dao.Calendars {
 
 }
 
-func NewCalendarRepository(db *gorm.DB) CalendarRepository {
-	return &calendarRepository{
+func NewCalendarRepository(db *gorm.DB) *CalendarRepositoryImpl {
+	return &CalendarRepositoryImpl{
 		db: db,
 	}
 }

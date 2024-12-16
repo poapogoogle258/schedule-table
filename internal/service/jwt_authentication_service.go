@@ -21,7 +21,7 @@ type AuthCustomClaims struct {
 	jwt.StandardClaims
 }
 
-type jwtServices struct {
+type JwtServicesImpl struct {
 	secretKey string
 	issure    string
 }
@@ -34,7 +34,7 @@ func getSecretKey() string {
 	return secret
 }
 
-func (service *jwtServices) GenerateToken(userId, name, email string) string {
+func (service *JwtServicesImpl) GenerateToken(userId, name, email string) string {
 	claims := &AuthCustomClaims{
 		userId,
 		email,
@@ -55,7 +55,7 @@ func (service *jwtServices) GenerateToken(userId, name, email string) string {
 	return t
 }
 
-func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, error) {
+func (service *JwtServicesImpl) ValidateToken(encodedToken string) (*jwt.Token, error) {
 	return jwt.ParseWithClaims(encodedToken, &AuthCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, isValid := token.Method.(*jwt.SigningMethodHMAC); !isValid {
 			return nil, errors.New("invalid token")
@@ -67,8 +67,8 @@ func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, erro
 
 }
 
-func NewJWTAuthService() JWTService {
-	return &jwtServices{
+func NewJWTAuthService() *JwtServicesImpl {
+	return &JwtServicesImpl{
 		secretKey: getSecretKey(),
 		issure:    "Bikash",
 	}

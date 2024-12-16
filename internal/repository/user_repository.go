@@ -11,11 +11,11 @@ type UserRepository interface {
 	FineUserEmail(email string) *dao.Users
 }
 
-type userRepository struct {
+type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func (u *userRepository) FindUser(userId string) *dao.Users {
+func (u *UserRepositoryImpl) FindUser(userId string) *dao.Users {
 	var user *dao.Users
 
 	u.db.Model(&dao.Users{}).Find(&user, "id = ?", userId)
@@ -23,7 +23,7 @@ func (u *userRepository) FindUser(userId string) *dao.Users {
 	return user
 }
 
-func (u *userRepository) FineUserEmail(email string) *dao.Users {
+func (u *UserRepositoryImpl) FineUserEmail(email string) *dao.Users {
 	var user *dao.Users
 
 	u.db.Model(&dao.Users{}).Find(&user, "email = ?", email)
@@ -31,8 +31,8 @@ func (u *userRepository) FineUserEmail(email string) *dao.Users {
 	return user
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{
+func NewUserRepository(db *gorm.DB) *UserRepositoryImpl {
+	return &UserRepositoryImpl{
 		db: db,
 	}
 }

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"schedule_table/internal/constant"
+	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -18,17 +20,18 @@ type CalendarsHandlerImpl struct {
 // }
 
 func (s *CalendarsHandlerImpl) GetMyCalendar(c *gin.Context) {
+	defer pkg.PanicHandler(c)
 
 	if userId, check := c.Keys["token_userId"]; check {
 		calendar := s.calRepo.FindByOwnerId(userId.(string))
-		c.JSON(200, calendar)
+		c.JSON(200, pkg.BuildResponse(constant.Success, calendar))
 	} else {
-		c.JSON(200, nil)
+		pkg.PanicException(constant.DataNotFound)
 	}
 
 }
 
-func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {
+func NewCalendarsHandler(calRepo *repository.CalendarRepositoryImpl) *CalendarsHandlerImpl {
 	return &CalendarsHandlerImpl{
 		calRepo: calRepo,
 	}

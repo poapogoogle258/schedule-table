@@ -8,16 +8,18 @@ import (
 )
 
 func AuthorizeJWT() gin.HandlerFunc {
+
+	jwt_service := service.NewJWTAuthService()
+
 	return func(c *gin.Context) {
 		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 
-		token, err := service.NewJWTAuthService().ValidateToken(tokenString)
+		token, err := jwt_service.ValidateToken(tokenString)
 
 		if token.Valid {
 			claims := token.Claims.(*service.AuthCustomClaims)
-
 			c.Keys = make(map[string]any)
 			c.Keys["token_userId"] = claims.UserId
 			c.Keys["token_name"] = claims.Name
@@ -29,7 +31,7 @@ func AuthorizeJWT() gin.HandlerFunc {
 				"statusCode": http.StatusUnauthorized,
 				"message":    err.Error(),
 			})
-
+			c.Abort()
 		}
 	}
 }
