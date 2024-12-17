@@ -67,7 +67,7 @@ func (service *JwtServicesImpl) ValidateToken(encodedToken string) (*jwt.Token, 
 
 }
 
-func NewJWTAuthService() *JwtServicesImpl {
+func NewJWTAuthService() JWTService {
 	return &JwtServicesImpl{
 		secretKey: getSecretKey(),
 		issure:    "Bikash",

@@ -31,8 +31,9 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	api.Use(middleware.AuthorizeJWT())
 
 	{
-		user := api.Group("/calendars")
-		user.GET("/default", handlers.Calendar.GetMyCalendar)
+		calendar := api.Group("/calendars")
+		calendar.GET("/default", handlers.Calendar.GetMyCalendar)
+		calendar.POST("/:calendarId/generate", handlers.Calendar.GenerateTasks)
 	}
 
 	return router

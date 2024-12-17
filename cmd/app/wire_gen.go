@@ -20,7 +20,8 @@ import (
 func Injector() *router.Handlers {
 	db := database.ConnectPostgresql()
 	calendarRepository := repository.NewCalendarRepository(db)
-	calendarsHandler := handler.NewCalendarsHandler(calendarRepository)
+	schedulesRepository := repository.NewSchedulesRepository(db)
+	calendarsHandler := handler.NewCalendarsHandler(calendarRepository, schedulesRepository)
 	jwtService := service.NewJWTAuthService()
 	userRepository := repository.NewUserRepository(db)
 	authHandler := handler.NewAuthHandler(jwtService, userRepository)
@@ -35,6 +36,8 @@ func Injector() *router.Handlers {
 
 var (
 	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository)
+
+	scheduleSet = wire.NewSet(repository.NewSchedulesRepository)
 
 	authSet = wire.NewSet(handler.NewAuthHandler, service.NewJWTAuthService, repository.NewUserRepository)
 )

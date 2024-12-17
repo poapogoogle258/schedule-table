@@ -75,7 +75,7 @@ func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 
 }
 
-func NewAuthHandler(jwtService *service.JwtServicesImpl, userRepo *repository.UserRepositoryImpl) *AuthHandlerImpl {
+func NewAuthHandler(jwtService service.JWTService, userRepo repository.UserRepository) AuthHandler {
 	return &AuthHandlerImpl{
 		jwtService,
 		userRepo,

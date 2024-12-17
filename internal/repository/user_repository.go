@@ -31,7 +31,7 @@ func (u *UserRepositoryImpl) FineUserEmail(email string) *dao.Users {
 	return user
 }
 
-func NewUserRepository(db *gorm.DB) *UserRepositoryImpl {
+func NewUserRepository(db *gorm.DB) UserRepository {
 	return &UserRepositoryImpl{
 		db: db,
 	}

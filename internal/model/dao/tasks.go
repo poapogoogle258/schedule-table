@@ -9,7 +9,7 @@ import (
 
 type Tasks struct {
 	gorm.Model
-	Id          uuid.UUID `gorm:"type:uuid; column:id; primary_key; uniqueIndex" json:"id"`
+	Id          uuid.UUID `gorm:"type:uuid;column:id;primary_key;uniqueIndex" json:"id"`
 	CalendarId  uuid.UUID `gorm:"type:uuid;column:calendar_id" json:"calendar_id"`
 	ScheduleId  uuid.UUID `gorm:"type:uuid;column:schedule_id" json:"schedule_id"`
 	MemberId    uuid.UUID `gorm:"type:uuid;column:member_id" json:"member_id"`

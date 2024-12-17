@@ -19,6 +19,10 @@ var (
 		repository.NewCalendarRepository,
 	)
 
+	scheduleSet = wire.NewSet(
+		repository.NewSchedulesRepository,
+	)
+
 	authSet = wire.NewSet(
 		handler.NewAuthHandler,
 		service.NewJWTAuthService,
@@ -28,8 +32,10 @@ var (
 
 func Injector() *router.Handlers {
 
-	wire.Build(calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
+	wire.Build(scheduleSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
 
 	return &router.Handlers{}
 
 }
+
+// go run github.com/google/wire/cmd/wire .

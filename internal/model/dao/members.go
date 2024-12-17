@@ -7,7 +7,7 @@ import (
 
 type Members struct {
 	gorm.Model
-	Id          uuid.UUID `gorm:"type:uuid; column:id; primary_key; uniqueIndex" json:"id"`
+	Id          uuid.UUID `gorm:"type:uuid;column:id;primary_key;uniqueIndex" json:"id"`
 	CalendarId  uuid.UUID `gorm:"type:uuid;column:calendar_id" json:"calendar_id"`
 	ImageURL    string    `gorm:"column:imageURL;default: default-member-profile.jpeg" json:"imageURL"`
 	Name        string    `gorm:"column:name" json:"name"`
