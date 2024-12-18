@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
+	"schedule_table/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
+	"github.com/teambition/rrule-go"
 )
 
 type CalendarsHandler interface {
@@ -18,6 +21,7 @@ type CalendarsHandler interface {
 type CalendarsHandlerImpl struct {
 	calRepo      repository.CalendarRepository
 	scheduleRepo repository.SchedulesRepository
+	recurService service.RecurrenceService
 }
 
 func (s *CalendarsHandlerImpl) GetMyCalendar(c *gin.Context) {
@@ -52,15 +56,27 @@ func (s *CalendarsHandlerImpl) GenerateTasks(c *gin.Context) {
 	start, end := now.BeginningOfDay(), now.EndOfMonth()
 
 	schedules := s.scheduleRepo.GetScheduleOfCalendar(calendarId, &start, &end)
-	leaves := s.calRepo.GetLeavesOfCalendarId(calendarId, &start, &end)
+	// leaves := s.calRepo.GetLeavesOfCalendarId(calendarId, &start, &end)
+
+	for _, schedule := range *schedules {
+		config := s.recurService.NewScheduleRuleConfig(&schedule, &start, &end)
+		r, _ := rrule.NewRRule(*config)
+
+		fmt.Println(r.All())
+
+	}
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, schedules))
 
 }
 
-func NewCalendarsHandler(calRepo repository.CalendarRepository, scheduleRepo repository.SchedulesRepository) CalendarsHandler {
+func NewCalendarsHandler(
+	calRepo repository.CalendarRepository,
+	scheduleRepo repository.SchedulesRepository,
+	recurService service.RecurrenceService) CalendarsHandler {
 	return &CalendarsHandlerImpl{
 		calRepo:      calRepo,
 		scheduleRepo: scheduleRepo,
+		recurService: recurService,
 	}
 }

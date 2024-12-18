@@ -43,3 +43,13 @@ func (status ResponseStatus) GetResponseMessage() string {
 		panic("getResponseMessage: Not found status_code in constant_status")
 	}
 }
+
+const (
+	YEARLY int = iota
+	MONTHLY
+	WEEKLY
+	DAILY
+	HOURLY
+	MINUTELY
+	SECONDLY
+)

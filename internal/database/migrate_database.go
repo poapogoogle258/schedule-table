@@ -354,7 +354,7 @@ func MigrateSetUpAndInitData(db *gorm.DB) error {
 		Hr_start:             "00:00",
 		Hr_end:               "08:00",
 		Time_duration:        8 * 60 * 60,
-		Recurrence_freq:      int32(rrule.YEARLY),
+		Recurrence_freq:      int8(rrule.DAILY),
 		Recurrence_interval:  4,
 		Recurrence_wkst:      "",
 		Recurrence_bymonth:   "1",

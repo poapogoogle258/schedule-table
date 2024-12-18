@@ -17,6 +17,7 @@ var (
 	calendarSet = wire.NewSet(
 		handler.NewCalendarsHandler,
 		repository.NewCalendarRepository,
+		service.NewRecurrenceService,
 	)
 
 	scheduleSet = wire.NewSet(
@@ -25,8 +26,8 @@ var (
 
 	authSet = wire.NewSet(
 		handler.NewAuthHandler,
-		service.NewJWTAuthService,
 		repository.NewUserRepository,
+		service.NewJWTAuthService,
 	)
 )
 
