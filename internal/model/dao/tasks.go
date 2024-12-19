@@ -15,6 +15,7 @@ type Tasks struct {
 	MemberId    uuid.UUID `gorm:"type:uuid;column:member_id" json:"member_id"`
 	Start       time.Time `gorm:"column:start" json:"start"`
 	End         time.Time `gorm:"column:end" json:"end"`
+	Priority    int8      `gorm:"column:priority" json:"priority"`
 	Status      int8      `gorm:"column:status" json:"status"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`

@@ -13,6 +13,7 @@ type CalendarRepository interface {
 	IsOwnerCalendar(userId string, calendarId string) bool
 	GetDefaultCalendarId(userId string) string
 	GetLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) *[]dao.Leaves
+	GetMembersOfCalendarId(calendarId string) *[]dao.Members
 }
 
 type CalendarRepositoryImpl struct {
@@ -52,6 +53,13 @@ func (s *CalendarRepositoryImpl) GetLeavesOfCalendarId(calendarId string, start 
 	s.db.Find(&leaves)
 
 	return leaves
+}
+
+func (s *CalendarRepositoryImpl) GetMembersOfCalendarId(calendarId string) *[]dao.Members {
+	var members *[]dao.Members
+	s.db.Find(&members, "calendar_id = ?", calendarId)
+
+	return members
 }
 
 func NewCalendarRepository(db *gorm.DB) CalendarRepository {

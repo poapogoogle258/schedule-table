@@ -20,7 +20,7 @@ type Schedules struct {
 	Hr_start             string         `gorm:"column:hr_start" json:"hr_start"`
 	Hr_end               string         `gorm:"column:hr_end" json:"hr_end"`
 	Tzid                 string         `gorm:"column:tzid;default:Asia/Bangkok" json:"tzid"`
-	Time_duration        int32          `gorm:"column:time_duration" json:"time_duration"`
+	RestTime             int32          `gorm:"column:restTime;default:0" json:"restTime"`
 	Recurrence_freq      int8           `gorm:"column:recurrence_freq" json:"recurrence_freq"` // YEARLY=0,MONTHLY,WEEKLY,DAILY,HOURLY,MINUTELY,SECONDLY
 	Recurrence_interval  int32          `gorm:"column:recurrence_interval" json:"recurrence_interval"`
 	Recurrence_wkst      string         `gorm:"column:recurrence_wkst" json:"recurrence_wkst"`

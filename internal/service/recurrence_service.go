@@ -7,14 +7,44 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	rrule "github.com/teambition/rrule-go"
 )
 
 type RecurrenceService interface {
 	NewScheduleRuleConfig(schedule *dao.Schedules, start *time.Time, end *time.Time) *rrule.ROption
+	GenerateScheduleTasks(schedule *dao.Schedules, start *time.Time, end *time.Time) *[]dao.Tasks
 }
 
 type Recurrence struct {
+}
+
+func (s *Recurrence) GenerateScheduleTasks(schedule *dao.Schedules, start *time.Time, end *time.Time) *[]dao.Tasks {
+
+	config := s.NewScheduleRuleConfig(schedule, start, end)
+	r, _ := rrule.NewRRule(*config)
+
+	recurrence_schedule := r.All()
+	tasks := make([]dao.Tasks, len(recurrence_schedule))
+
+	location, errLoadLocation := time.LoadLocation(schedule.Tzid)
+	if errLoadLocation != nil {
+		panic(errLoadLocation)
+	}
+	hr_end := mapIntFromStringSplit(schedule.Hr_end, ":")
+
+	for i, _ := range recurrence_schedule {
+		tasks[i].Id, _ = uuid.NewUUID()
+		tasks[i].ScheduleId = schedule.Id
+		tasks[i].CalendarId = schedule.CalendarId
+		tasks[i].Priority = schedule.Priority
+		tasks[i].Status = 0
+		tasks[i].Start = recurrence_schedule[i]
+		tasks[i].End = time.Date(recurrence_schedule[i].Year(), recurrence_schedule[i].Month(), recurrence_schedule[i].Day(), hr_end[0], hr_end[1], 0, 0, location)
+	}
+
+	return &tasks
+
 }
 
 func (s *Recurrence) NewScheduleRuleConfig(schedule *dao.Schedules, start *time.Time, end *time.Time) *rrule.ROption {
