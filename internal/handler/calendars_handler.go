@@ -86,6 +86,7 @@ func (s *CalendarsHandlerImpl) GenerateTasks(c *gin.Context) {
 		scheduleTasks[i].ListMembers = service.ListResponsible{
 			Members: responsible_persons,
 		}
+
 	}
 
 	// processing part

@@ -69,23 +69,34 @@ func NewTasksDaily(tasks *[]dao.Tasks) *TasksDaily {
 }
 
 func (tasksDaily *TasksDaily) AddTasks(tasks *[]dao.Tasks) {
-	for _, v := range *tasks {
-		tasksDaily.AddTask(&v)
+
+	for i := 0; i < len(*tasks); i++ {
+
+		key := (*tasks)[i].Start.Format(time.DateOnly)
+
+		if _, ok := (*tasksDaily)[key]; ok {
+			(*tasksDaily)[key] = append((*tasksDaily)[key], &(*tasks)[i])
+		} else {
+			(*tasksDaily)[key] = append((*tasksDaily)[key], &(*tasks)[i])
+		}
+
 	}
 }
 
-func (tasksDaily *TasksDaily) AddTask(task *dao.Tasks) {
+// func (tasksDaily *TasksDaily) AddTask(task *dao.Tasks) {
 
-	key := task.Start.Format(time.DateOnly)
+// 	key := task.Start.Format(time.DateOnly)
 
-	// check task
-	if _, ok := (*tasksDaily)[key]; ok {
-		(*tasksDaily)[key] = append((*tasksDaily)[key], task)
-	} else {
-		(*tasksDaily)[key] = append((*tasksDaily)[key], task)
-	}
+// 	(*tasksDaily)[key] = []*dao.Tasks{task}
 
-}
+// 	// check task
+// 	if _, ok := (*tasksDaily)[key]; ok {
+// 		(*tasksDaily)[key] = append((*tasksDaily)[key], task)
+// 	} else {
+// 		(*tasksDaily)[key] = append((*tasksDaily)[key], task)
+// 	}
+
+// }
 
 // ######################################## Schedule ###############################################
 
