@@ -1,15 +1,17 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"schedule_table/internal/constant"
+	"schedule_table/internal/model/dao"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jinzhu/now"
 )
 
@@ -36,7 +38,7 @@ func (s *CalendarsHandlerImpl) GetMyCalendar(c *gin.Context) {
 }
 
 func (s *CalendarsHandlerImpl) GenerateTasks(c *gin.Context) {
-	// defer pkg.PanicHandler(c)
+	defer pkg.PanicHandler(c)
 
 	userId, validUserId := c.Keys["token_userId"].(string)
 	calendarId := c.Param("calendarId")
@@ -59,91 +61,54 @@ func (s *CalendarsHandlerImpl) GenerateTasks(c *gin.Context) {
 	leaves := s.calRepo.GetLeavesOfCalendarId(calendarId, &start, &end)
 	members := s.calRepo.GetMembersOfCalendarId(calendarId)
 
-	// create members part
-	workersMap := service.MapWorkers{}
-	for _, member := range *members {
-		workersMap[member.Id.String()] = &service.Worker{
-			Id:       member.Id,
-			Member:   &member,
-			RestTime: *GetValueOrDefaultTime(member.LastTimeTask),
-		}
-	}
-	for _, leaves := range *leaves {
-		workersMap[leaves.MemberId.String()].Leaves = service.GetBetweens(&leaves.Start, &leaves.End)
-	}
+	workersTable := service.NewMapWorker(members, leaves)
+	schedulesManager := make(map[uuid.UUID]*service.ScheduleManager)
+	schedulesTasks := make([]dao.Tasks, 0)
 
-	// create schedule part
-	scheduleTasks := make([]service.Schedule, len(*schedules))
-	for i, schedule := range *schedules {
-
-		tasks_schedule := s.recurService.GenerateScheduleTasks(&schedule, &start, &end)
-		responsible_persons := s.scheduleRepo.GetResponsiblePersons(schedule.Id.String())
-
-		scheduleTasks[i].Name = &schedule.Name
-		scheduleTasks[i].Priority = int(schedule.Priority)
-		scheduleTasks[i].Tasks = tasks_schedule
-		scheduleTasks[i].TasksDaily = service.NewTasksDaily(tasks_schedule)
-		scheduleTasks[i].ListMembers = service.ListResponsible{
-			Members: responsible_persons,
-		}
-
+	for i := 0; i < len(*schedules); i++ {
+		schedule := &(*schedules)[i]
+		tasksSchedule := s.recurService.GenerateScheduleTasks(schedule, &start, &end)
+		responsiblePersons := s.scheduleRepo.GetResponsiblePersons(schedule.Id.String())
+		schedulesManager[schedule.Id] = service.NewScheduleManager(schedule, responsiblePersons)
+		schedulesTasks = append(schedulesTasks, (*tasksSchedule)...)
 	}
 
-	// processing part
-
-	// TO DO CHECK INTINITY LOOP
-	// TO DO Sort Tasks in TasksDaily
-
-	// start, end := now.BeginningOfDay(), now.EndOfMonth()
-
-	for start.Before(end) {
-		date := start.Format(time.DateOnly)
-		fmt.Printf("Day : %s\n", date)
-
-		for i := 0; i < len(scheduleTasks); i++ {
-			if tasksDaily, ok := (*scheduleTasks[i].TasksDaily)[date]; ok {
-				fmt.Printf("TasksDaily of schedule \"%s\"\n", *scheduleTasks[i].Name)
-
-				for j := 0; j < len(tasksDaily); j++ {
-					fmt.Printf("task[%d] : start(%s) , end(%s) \n", j+1, tasksDaily[j].Start.Format(time.DateOnly), tasksDaily[j].End.Format(time.DateOnly))
-
-					index := 0
-					queue := scheduleTasks[i].ListMembers.Next(index)
-					fmt.Printf("Select Member : %s\n", queue.MemberId.String())
-
-					for {
-						if workersMap.CheckWorkerFree(queue.MemberId.String(), tasksDaily[j].Start) {
-							tasksDaily[j].MemberId = queue.MemberId
-							fmt.Printf("Set Member : %s into task: %s\n", queue.MemberId.String(), tasksDaily[j].Id.String())
-							break
-						} else {
-							index++
-							scheduleTasks[i].ListMembers.Skip()
-							queue = scheduleTasks[i].ListMembers.Next(index)
-							fmt.Printf("Skip Member: %s\n", queue.MemberId.String())
-						}
-					}
-				}
+	// soft schedulesManager by Start, Priority
+	slices.SortFunc(schedulesTasks, func(a, b dao.Tasks) int {
+		if c := a.Start.Compare(b.Start); c == 0 {
+			if a.Priority > b.Priority {
+				return 1
+			} else {
+				return -1
 			}
+		} else {
+			return c
 		}
+	})
 
-		start = start.Add(time.Hour * 24)
+	for i := 0; i < len(schedulesTasks); i++ {
+		task := &schedulesTasks[i]
+
+		queue := 0
+		workerId := schedulesManager[task.ScheduleId].Next(queue)
+		for !workersTable.IsAvailable(workerId, task.Start) {
+			queue++
+			schedulesManager[task.ScheduleId].Skip()
+			workerId = schedulesManager[task.ScheduleId].Next(queue)
+		}
+		schedulesManager[task.ScheduleId].Select(queue)
+		workersTable.AddTask(workerId, task)
+		task.MemberId = workerId
 	}
 
-	// -------------------------------------------------------------
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, scheduleTasks[0].Tasks))
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, schedulesTasks))
 
 }
 
-func GetValueOrDefaultTime(t *time.Time) *time.Time {
+func GetValueOrDefaultTime(t *time.Time, defaultValue *time.Time) *time.Time {
 	if t == nil {
-		now := time.Now()
-		startOfDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-
-		return &startOfDate
+		return defaultValue
 	}
-
 	return t
 }
 
