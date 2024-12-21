@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"schedule_table/unities"
+	"schedule_table/util"
 
 	rrule "github.com/teambition/rrule-go"
 
@@ -31,7 +31,7 @@ func MigrateSetUpAndInitData(db *gorm.DB) error {
 		Id:       uuid.New(),
 		Name:     "user_testing",
 		Email:    "user_testing@gmail.com",
-		Password: unities.HashPassword("password123"),
+		Password: util.HashPassword("password123"),
 	}
 
 	initCalendar := &dao.Calendars{
@@ -343,50 +343,68 @@ func MigrateSetUpAndInitData(db *gorm.DB) error {
 		},
 	}
 
-	initSchedule := &dao.Schedules{
-		Id:                   uuid.New(),
-		CalendarId:           initCalendar.Id,
-		Name:                 "setting_first_schedule",
-		Description:          "test setting",
-		Priority:             1,
-		Start:                time.Time{},
-		End:                  time.Time{},
-		Hr_start:             "00:00",
-		Hr_end:               "08:00",
-		RestTime:             3 * 60 * 60,
-		Recurrence_freq:      int8(rrule.DAILY),
-		Recurrence_interval:  4,
-		Recurrence_wkst:      "",
-		Recurrence_bymonth:   "1",
-		Recurrence_byweekday: "2,3,4,5,6,7,8",
+	initSchedule := []*dao.Schedules{
+		{
+			Id:                   uuid.New(),
+			CalendarId:           initCalendar.Id,
+			Name:                 "setting_first_schedule 0700 - 1000 ",
+			Description:          "test setting",
+			Priority:             1,
+			Start:                time.Time{},
+			End:                  time.Time{},
+			Hr_start:             "07:00",
+			Hr_end:               "10:00",
+			BreakTime:            2 * 60 * 60,
+			Tzid:                 "Asia/Bangkok",
+			Recurrence_freq:      int8(rrule.DAILY),
+			Recurrence_interval:  1,
+			Recurrence_wkst:      "",
+			Recurrence_bymonth:   "",
+			Recurrence_byweekday: "0,1,2,3,4",
+		},
+		{
+			Id:                   uuid.New(),
+			CalendarId:           initCalendar.Id,
+			Name:                 "setting_first_schedule 1000 - 1400 ",
+			Description:          "test setting",
+			Priority:             1,
+			Start:                time.Time{},
+			End:                  time.Time{},
+			Hr_start:             "11:00",
+			Hr_end:               "14:00",
+			BreakTime:            2 * 60 * 60,
+			Tzid:                 "Asia/Bangkok",
+			Recurrence_freq:      int8(rrule.DAILY),
+			Recurrence_interval:  1,
+			Recurrence_wkst:      "",
+			Recurrence_bymonth:   "",
+			Recurrence_byweekday: "0,1,2,3,4",
+		},
+		{
+			Id:                   uuid.New(),
+			CalendarId:           initCalendar.Id,
+			Name:                 "setting_first_schedule 1400 - 1800 ",
+			Description:          "test setting",
+			Priority:             1,
+			Start:                time.Time{},
+			End:                  time.Time{},
+			Hr_start:             "14:00",
+			Hr_end:               "18:00",
+			BreakTime:            2 * 60 * 60,
+			Tzid:                 "Asia/Bangkok",
+			Recurrence_freq:      int8(rrule.DAILY),
+			Recurrence_interval:  1,
+			Recurrence_wkst:      "",
+			Recurrence_bymonth:   "",
+			Recurrence_byweekday: "0,1,2,3,4",
+		},
 	}
 
-	initResponsible := []*dao.Responsible{
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[0].Id, Queue: 1},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[1].Id, Queue: 2},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[2].Id, Queue: 3},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[3].Id, Queue: 4},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[4].Id, Queue: 5},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[5].Id, Queue: 6},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[6].Id, Queue: 7},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[7].Id, Queue: 8},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[8].Id, Queue: 9},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[9].Id, Queue: 10},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[10].Id, Queue: 11},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[11].Id, Queue: 12},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[12].Id, Queue: 13},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[13].Id, Queue: 14},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[14].Id, Queue: 15},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[15].Id, Queue: 16},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[16].Id, Queue: 17},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[17].Id, Queue: 18},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[18].Id, Queue: 19},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[19].Id, Queue: 20},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[20].Id, Queue: 21},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[21].Id, Queue: 22},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[22].Id, Queue: 23},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[23].Id, Queue: 24},
-		{ScheduleId: initSchedule.Id, MemberId: initMembers[24].Id, Queue: 25},
+	initResponsible := make([]*dao.Responsible, 0)
+	for i := 0; i < len(initSchedule); i++ {
+		for j := 0; j < len(initMembers); j++ {
+			initResponsible = append(initResponsible, &dao.Responsible{ScheduleId: initSchedule[i].Id, MemberId: initMembers[j].Id, Queue: int8(j + 1)})
+		}
 	}
 
 	result_created_user := db.Save(initUser)

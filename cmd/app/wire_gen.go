@@ -20,15 +20,17 @@ import (
 func Injector() *router.Handlers {
 	db := database.ConnectPostgresql()
 	calendarRepository := repository.NewCalendarRepository(db)
+	calendarsHandler := handler.NewCalendarsHandler(calendarRepository)
 	schedulesRepository := repository.NewSchedulesRepository(db)
 	recurrenceService := service.NewRecurrenceService()
-	calendarsHandler := handler.NewCalendarsHandler(calendarRepository, schedulesRepository, recurrenceService)
+	generateTaskHandler := handler.NewGenerateTaskHandler(calendarRepository, schedulesRepository, recurrenceService)
 	jwtService := service.NewJWTAuthService()
 	userRepository := repository.NewUserRepository(db)
 	authHandler := handler.NewAuthHandler(jwtService, userRepository)
 	handlers := &router.Handlers{
-		Calendar: calendarsHandler,
-		Auth:     authHandler,
+		Calendar:     calendarsHandler,
+		GenerateTask: generateTaskHandler,
+		Auth:         authHandler,
 	}
 	return handlers
 }
@@ -36,9 +38,9 @@ func Injector() *router.Handlers {
 // wire.go:
 
 var (
-	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository, service.NewRecurrenceService)
+	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository)
 
-	scheduleSet = wire.NewSet(repository.NewSchedulesRepository)
+	generateTaskSet = wire.NewSet(handler.NewGenerateTaskHandler, repository.NewSchedulesRepository, service.NewRecurrenceService)
 
 	authSet = wire.NewSet(handler.NewAuthHandler, repository.NewUserRepository, service.NewJWTAuthService)
 )

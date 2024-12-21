@@ -17,11 +17,12 @@ var (
 	calendarSet = wire.NewSet(
 		handler.NewCalendarsHandler,
 		repository.NewCalendarRepository,
-		service.NewRecurrenceService,
 	)
 
-	scheduleSet = wire.NewSet(
+	generateTaskSet = wire.NewSet(
+		handler.NewGenerateTaskHandler,
 		repository.NewSchedulesRepository,
+		service.NewRecurrenceService,
 	)
 
 	authSet = wire.NewSet(
@@ -33,7 +34,7 @@ var (
 
 func Injector() *router.Handlers {
 
-	wire.Build(scheduleSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
+	wire.Build(generateTaskSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
 
 	return &router.Handlers{}
 

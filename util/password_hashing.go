@@ -1,4 +1,4 @@
-package unities
+package util
 
 import (
 	"os"

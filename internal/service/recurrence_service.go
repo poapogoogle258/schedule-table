@@ -53,7 +53,6 @@ func (s *Recurrence) NewScheduleRuleConfig(schedule *dao.Schedules, start *time.
 
 	config.Freq = rrule.Frequency(schedule.Recurrence_freq)
 	config.Interval = int(schedule.Recurrence_interval)
-	config.Count = 31
 
 	if schedule.Recurrence_freq == int8(constant.DAILY) && schedule.Recurrence_byweekday != "" {
 		config.Byweekday = mapWeekdayFromStringSplit(schedule.Recurrence_byweekday, ",")

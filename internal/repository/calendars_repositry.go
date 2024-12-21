@@ -57,7 +57,7 @@ func (s *CalendarRepositoryImpl) GetLeavesOfCalendarId(calendarId string, start 
 
 func (s *CalendarRepositoryImpl) GetMembersOfCalendarId(calendarId string) *[]dao.Members {
 	var members *[]dao.Members
-	s.db.Find(&members, "calendar_id = ?", calendarId)
+	s.db.Preload("Leaves").Find(&members, "calendar_id = ?", calendarId)
 
 	return members
 }

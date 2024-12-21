@@ -5,7 +5,7 @@ import (
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 
-	"schedule_table/unities"
+	"schedule_table/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,7 @@ func (s *AuthHandlerImpl) Login(c *gin.Context) {
 
 	user := s.userRepo.FineUserEmail(request.Email)
 
-	if unities.VerifyPassword(request.Password, user.Password) {
+	if util.VerifyPassword(request.Password, user.Password) {
 		token := s.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
 		c.JSON(http.StatusOK, gin.H{
 			"token": token,

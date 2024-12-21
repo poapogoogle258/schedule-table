@@ -6,17 +6,29 @@ import (
 	"schedule_table/internal/handler"
 	"schedule_table/internal/middleware"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
-	Calendar handler.CalendarsHandler
-	Auth     handler.AuthHandler
+	Calendar     handler.CalendarsHandler
+	GenerateTask handler.GenerateTaskHandler
+	Auth         handler.AuthHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
 
 	router := gin.New()
+
+	// CorsConfig := cors.DefaultConfig()
+	// CorsConfig.AllowAllOrigins = true
+	// CorsConfig.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
+	// CorsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept", "User-Agent", "Cache-Control", "Pragma"}
+	// CorsConfig.ExposeHeaders = []string{"Content-Length"}
+	// CorsConfig.AllowCredentials = true
+	// CorsConfig.MaxAge = 60 * 60
+	router.Use(cors.Default())
+
 	router.Use(gin.Logger())
 	router.Use(gin.CustomRecovery(CustomRecovery))
 
@@ -33,7 +45,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	{
 		calendar := api.Group("/calendars")
 		calendar.GET("/default", handlers.Calendar.GetMyCalendar)
-		calendar.POST("/:calendarId/generate", handlers.Calendar.GenerateTasks)
+		calendar.POST("/:calendarId/generate", handlers.GenerateTask.GenerateTasks)
 	}
 
 	return router
