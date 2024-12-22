@@ -8,6 +8,7 @@ import (
 
 type Schedules struct {
 	Id                   uuid.UUID      `gorm:"type:uuid;column:id;primarykey;uniqueIndex" json:"id"`
+	MasterScheduleId     *uuid.UUID     `gorm:"type:uuid;column:master_id" json:"master_id"`
 	CalendarId           uuid.UUID      `gorm:"type:uuid;column:calendar_id" json:"calendar_id"`
 	Name                 string         `gorm:"column:name" json:"name"`
 	Description          string         `gorm:"column:description;default:-" json:"description"`

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/model/dao"
@@ -220,8 +221,15 @@ func (gt *generateTaskHandler) GenerateTasks(c *gin.Context) {
 	for i := 0; i < len(*schedules); i++ {
 		schedule := &(*schedules)[i]
 		tasksSchedule := gt.recurService.GenerateScheduleTasks(schedule, &start, &end)
-		responsiblePersons := gt.scheduleRepo.GetResponsiblePersons(schedule.Id.String())
-		schedulesManager[schedule.Id] = NewScheduleManager(schedule, responsiblePersons)
+
+		fmt.Println("schedule.MasterScheduleId", schedule.MasterScheduleId, schedule.MasterScheduleId != nil)
+
+		if schedule.MasterScheduleId == nil {
+			responsiblePersons := gt.scheduleRepo.GetResponsiblePersons(schedule.Id.String())
+			schedulesManager[schedule.Id] = NewScheduleManager(schedule, responsiblePersons)
+		} else {
+			schedulesManager[schedule.Id] = schedulesManager[*schedule.MasterScheduleId]
+		}
 		schedulesTasks = append(schedulesTasks, (*tasksSchedule)...)
 	}
 
