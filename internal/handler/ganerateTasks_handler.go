@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/model/dao"
@@ -218,19 +217,28 @@ func (gt *generateTaskHandler) GenerateTasks(c *gin.Context) {
 
 	schedulesManager := make(map[uuid.UUID]*ScheduleManager)
 	schedulesTasks := make([]dao.Tasks, 0)
-	for i := 0; i < len(*schedules); i++ {
-		schedule := &(*schedules)[i]
-		tasksSchedule := gt.recurService.GenerateScheduleTasks(schedule, &start, &end)
+	for filterSchedule := 0; filterSchedule < 2; filterSchedule++ {
+		for i := 0; i < len(*schedules); i++ {
+			schedule := &(*schedules)[i]
 
-		fmt.Println("schedule.MasterScheduleId", schedule.MasterScheduleId, schedule.MasterScheduleId != nil)
+			if _, haveSchedulesManager := schedulesManager[schedule.Id]; haveSchedulesManager {
+				continue
+			}
 
-		if schedule.MasterScheduleId == nil {
-			responsiblePersons := gt.scheduleRepo.GetResponsiblePersons(schedule.Id.String())
-			schedulesManager[schedule.Id] = NewScheduleManager(schedule, responsiblePersons)
-		} else {
-			schedulesManager[schedule.Id] = schedulesManager[*schedule.MasterScheduleId]
+			if filterSchedule == 0 && schedule.MasterScheduleId != nil {
+				continue
+			}
+
+			tasksSchedule := gt.recurService.GenerateScheduleTasks(schedule, &start, &end)
+
+			if schedule.MasterScheduleId == nil {
+				responsiblePersons := gt.scheduleRepo.GetResponsiblePersons(schedule.Id.String())
+				schedulesManager[schedule.Id] = NewScheduleManager(schedule, responsiblePersons)
+			} else {
+				schedulesManager[schedule.Id] = schedulesManager[*schedule.MasterScheduleId]
+			}
+			schedulesTasks = append(schedulesTasks, (*tasksSchedule)...)
 		}
-		schedulesTasks = append(schedulesTasks, (*tasksSchedule)...)
 	}
 
 	// soft schedulesManager by Start, Priority

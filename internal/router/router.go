@@ -40,7 +40,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	}
 
 	api := router.Group("/api")
-	api.Use(middleware.AuthorizeJWT())
+	api.Use(middleware.AuthorizeJWT(handlers.Auth))
 
 	{
 		calendar := api.Group("/calendars")

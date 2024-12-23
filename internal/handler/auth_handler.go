@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
@@ -13,6 +14,7 @@ import (
 type AuthHandler interface {
 	Login(c *gin.Context)
 	ValidateToken(c *gin.Context)
+	CheckUserTokenExist(claims *service.AuthCustomClaims, token string) error
 }
 
 type AuthHandlerImpl struct {
@@ -73,6 +75,17 @@ func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 
 	}
 
+}
+
+func (s *AuthHandlerImpl) CheckUserTokenExist(claims *service.AuthCustomClaims, token string) error {
+	user := s.userRepo.FindUser(claims.Id)
+	if user == nil {
+		return fmt.Errorf("not found this user")
+	} else if user.Token != token {
+		return fmt.Errorf("token duplicate, have user use new token")
+	} else {
+		return nil
+	}
 }
 
 func NewAuthHandler(jwtService service.JWTService, userRepo repository.UserRepository) AuthHandler {
