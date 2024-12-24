@@ -10,6 +10,7 @@ import (
 
 type CalendarsHandler interface {
 	GetMyCalendar(c *gin.Context)
+	GetDefaultCalendarId(userId string) string
 }
 
 type calendarsHandler struct {
@@ -25,6 +26,10 @@ func (s *calendarsHandler) GetMyCalendar(c *gin.Context) {
 	} else {
 		pkg.PanicException(constant.DataNotFound)
 	}
+}
+
+func (s *calendarsHandler) GetDefaultCalendarId(userId string) string {
+	return s.calRepo.GetDefaultCalendarId(userId)
 }
 
 func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {

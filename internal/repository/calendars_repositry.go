@@ -42,7 +42,7 @@ func (s *CalendarRepositoryImpl) IsOwnerCalendar(userId string, calendarId strin
 
 func (s *CalendarRepositoryImpl) GetDefaultCalendarId(userId string) string {
 	var calendar *dao.Calendars
-	s.db.Select("id").Find(&calendar, "name = ? AND user_id = ?", "default", userId)
+	s.db.Select("id").Find(&calendar, "user_id = ? AND name = ?", "default", userId)
 
 	return calendar.Id.String()
 
