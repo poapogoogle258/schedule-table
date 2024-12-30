@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
@@ -10,26 +11,22 @@ import (
 
 type CalendarsHandler interface {
 	GetMyCalendar(c *gin.Context)
-	GetDefaultCalendarId(userId string) string
 }
 
 type calendarsHandler struct {
 	calRepo repository.CalendarRepository
 }
 
-func (s *calendarsHandler) GetMyCalendar(c *gin.Context) {
+func (ch *calendarsHandler) GetMyCalendar(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
-	if userId, check := c.Keys["token_userId"]; check {
-		calendar := s.calRepo.FindByOwnerId(userId.(string))
-		c.JSON(200, pkg.BuildResponse(constant.Success, calendar))
-	} else {
-		pkg.PanicException(constant.DataNotFound)
-	}
-}
+	userId := c.GetString("requestAuthUserId")
 
-func (s *calendarsHandler) GetDefaultCalendarId(userId string) string {
-	return s.calRepo.GetDefaultCalendarId(userId)
+	if calendars, err := ch.calRepo.GetMyCalendars(userId); err != nil {
+		panic(fmt.Errorf("GetMyCalendar: %w", err))
+	} else {
+		c.JSON(200, pkg.BuildResponse(constant.Success, calendars))
+	}
 }
 
 func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {

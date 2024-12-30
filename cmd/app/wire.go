@@ -30,11 +30,16 @@ var (
 		repository.NewUserRepository,
 		service.NewJWTAuthService,
 	)
+
+	calSet = wire.NewSet(
+		handler.NewMemberHandler,
+		repository.NewMemberRepository,
+	)
 )
 
 func Injector() *router.Handlers {
 
-	wire.Build(generateTaskSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
+	wire.Build(generateTaskSet, calSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
 
 	return &router.Handlers{}
 

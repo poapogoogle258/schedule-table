@@ -9,7 +9,7 @@ import (
 type Members struct {
 	Id           uuid.UUID  `gorm:"type:uuid;column:id;primarykey;uniqueIndex" json:"id"`
 	CalendarId   uuid.UUID  `gorm:"type:uuid;column:calendar_id" json:"calendar_id"`
-	ImageURL     string     `gorm:"column:imageURL;default: default-member-profile.jpeg" json:"imageURL"`
+	ImageURL     string     `gorm:"column:image_url;default: default-member-profile.jpeg" json:"imageURL"`
 	Name         string     `gorm:"column:name" json:"name"`
 	Nickname     string     `gorm:"column:nickname" json:"nickname"`
 	Color        string     `gorm:"column:color;default:#000000" json:"color"`
@@ -19,6 +19,5 @@ type Members struct {
 	Telephone    string     `gorm:"column:telephone" json:"telephone"`
 	LastTimeTask *time.Time `gorm:"column:lastTimeTask" json:"lastTimeTask"`
 	Leaves       *[]Leaves  `gorm:"foreignKey:member_id" json:"leaves"`
-
 	BaseModel
 }

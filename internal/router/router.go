@@ -14,6 +14,7 @@ type Handlers struct {
 	Calendar     handler.CalendarsHandler
 	GenerateTask handler.GenerateTaskHandler
 	Auth         handler.AuthHandler
+	Member       handler.MemberHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -43,11 +44,20 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	api.Use(middleware.AuthorizeJWT(handlers.Auth))
 
 	{
-		calendar := api.Group("/calendars/:calendarId")
-		calendar.Use(middleware.DefaultCalendarId(handlers.Calendar))
+		calendar := api.Group("/calendars")
 
 		calendar.GET("/", handlers.Calendar.GetMyCalendar)
-		calendar.POST("/generate", handlers.GenerateTask.GenerateTasks)
+		calendar.POST("/:calendarId/generate", handlers.GenerateTask.GenerateTasks)
+
+		// members manager
+		calendar.GET("/:calendarId/members", handlers.Member.GetMembers)
+		calendar.GET("/:calendarId/members/:memberId", handlers.Member.GetMemberId)
+		calendar.POST("/:calendarId/members", handlers.Member.CreateNewMember)
+
+		// calendar.POST("/members", handlers.Member.CreateNewMember)
+		// calendar.GET("/members/:memberId", handlers.Member.GetMemberId)
+		// calendar.PUT("/members/:memberId", handlers.Member.EditMemberInfo)
+		// calendar.DELETE("/members/:memberId", handlers.Member.DeleteMember)
 
 	}
 

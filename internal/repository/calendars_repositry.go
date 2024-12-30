@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"schedule_table/internal/interface/response"
 	"schedule_table/internal/model/dao"
 	"time"
 
@@ -9,9 +10,8 @@ import (
 )
 
 type CalendarRepository interface {
-	FindByOwnerId(ownerId string) *dao.Calendars
+	GetMyCalendars(ownerId string) (*[]response.Calendar, error)
 	IsOwnerCalendar(userId string, calendarId string) bool
-	GetDefaultCalendarId(userId string) string
 	GetLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) *[]dao.Leaves
 	GetMembersOfCalendarId(calendarId string) *[]dao.Members
 }
@@ -20,16 +20,14 @@ type CalendarRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func (s *CalendarRepositoryImpl) FindByOwnerId(ownerId string) *dao.Calendars {
-
-	var calendar *dao.Calendars
-
+func (s *CalendarRepositoryImpl) GetMyCalendars(ownerId string) (*[]response.Calendar, error) {
+	var calendars *[]response.Calendar
 	user_uuid, _ := uuid.Parse(ownerId)
+	if err := s.db.Model(&dao.Calendars{}).Find(&calendars, "user_id = ?", user_uuid).Error; err != nil {
+		return nil, err
+	}
 
-	s.db.Preload("Leaves").Preload("Schedules").Preload("Tasks").Preload("Members").Find(&calendar, "user_id = ?", user_uuid)
-
-	return calendar
-
+	return calendars, nil
 }
 
 func (s *CalendarRepositoryImpl) IsOwnerCalendar(userId string, calendarId string) bool {
@@ -37,14 +35,6 @@ func (s *CalendarRepositoryImpl) IsOwnerCalendar(userId string, calendarId strin
 	s.db.Select("id").Find(&calendar, "id = ? AND user_id = ?", calendarId, userId)
 
 	return calendar != nil
-
-}
-
-func (s *CalendarRepositoryImpl) GetDefaultCalendarId(userId string) string {
-	var calendar *dao.Calendars
-	s.db.Select("id").Find(&calendar, "user_id = ? AND name = ?", "default", userId)
-
-	return calendar.Id.String()
 
 }
 

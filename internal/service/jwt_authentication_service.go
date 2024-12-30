@@ -59,7 +59,6 @@ func (service *JwtServicesImpl) ValidateToken(encodedToken string) (*jwt.Token, 
 	return jwt.ParseWithClaims(encodedToken, &AuthCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, isValid := token.Method.(*jwt.SigningMethodHMAC); !isValid {
 			return nil, errors.New("invalid token")
-
 		}
 
 		return []byte(service.secretKey), nil

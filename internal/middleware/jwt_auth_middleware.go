@@ -29,10 +29,7 @@ func AuthorizeJWT(handlerAuth handler.AuthHandler) gin.HandlerFunc {
 				})
 				c.Abort()
 			} else {
-				c.Keys = make(map[string]any)
-				c.Keys["token_userId"] = claims.UserId
-				c.Keys["token_name"] = claims.Name
-				c.Keys["token_email"] = claims.Email
+				c.Set("requestAuthUserId", claims.UserId)
 				c.Next()
 			}
 

@@ -202,10 +202,6 @@ func (gt *generateTaskHandler) GenerateTasks(c *gin.Context) {
 		pkg.PanicException(constant.DataNotFound)
 	}
 
-	if calendarId == "default" {
-		calendarId = gt.calRepo.GetDefaultCalendarId(userId)
-	}
-
 	schedules := gt.scheduleRepo.GetScheduleOfCalendar(calendarId, &start, &end)
 	members := gt.calRepo.GetMembersOfCalendarId(calendarId)
 

@@ -26,4 +26,5 @@ type Schedules struct {
 	Recurrence_bymonth   string         `gorm:"column:recurrence_bymonth" json:"recurrence_bymonth"`
 	Recurrence_byweekday string         `gorm:"column:recurrence_byweekday" json:"recurrence_byweekday"`
 	Members_responsible  *[]Responsible `gorm:"foreignKey:schedule_id;" json:"members_responsible"`
+	BaseModel
 }
