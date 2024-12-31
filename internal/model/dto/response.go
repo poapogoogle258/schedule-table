@@ -1,13 +1,13 @@
-package response
+package dto
 
-type Calendar struct {
+type ResponseCalendar struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	ImageURL    string `json:"imageUrl"`
 	Description string `json:"description"`
 }
 
-type Member struct {
+type ResponseMember struct {
 	Id          string `json:"id"`
 	ImageURL    string `json:"imageURL"`
 	Name        string `json:"name"`

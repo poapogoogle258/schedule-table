@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"schedule_table/internal/interface/response"
 	"schedule_table/internal/model/dao"
+	"schedule_table/internal/model/dto"
+
 	"time"
 
 	"github.com/google/uuid"
@@ -10,7 +11,7 @@ import (
 )
 
 type CalendarRepository interface {
-	GetMyCalendars(ownerId string) (*[]response.Calendar, error)
+	GetMyCalendars(ownerId string) (*[]dto.ResponseCalendar, error)
 	IsOwnerCalendar(userId string, calendarId string) bool
 	GetLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) *[]dao.Leaves
 	GetMembersOfCalendarId(calendarId string) *[]dao.Members
@@ -20,9 +21,10 @@ type CalendarRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func (s *CalendarRepositoryImpl) GetMyCalendars(ownerId string) (*[]response.Calendar, error) {
-	var calendars *[]response.Calendar
+func (s *CalendarRepositoryImpl) GetMyCalendars(ownerId string) (*[]dto.ResponseCalendar, error) {
+	var calendars *[]dto.ResponseCalendar
 	user_uuid, _ := uuid.Parse(ownerId)
+
 	if err := s.db.Model(&dao.Calendars{}).Find(&calendars, "user_id = ?", user_uuid).Error; err != nil {
 		return nil, err
 	}

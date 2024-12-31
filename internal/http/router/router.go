@@ -4,17 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"schedule_table/internal/handler"
-	"schedule_table/internal/middleware"
+	"schedule_table/internal/http/middleware"
+	"schedule_table/internal/pkg"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
-	Calendar     handler.CalendarsHandler
-	GenerateTask handler.GenerateTaskHandler
-	Auth         handler.AuthHandler
-	Member       handler.MemberHandler
+	Calendar handler.CalendarsHandler
+	Auth     handler.AuthHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -45,19 +44,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 
 	{
 		calendar := api.Group("/calendars")
-
-		calendar.GET("/", handlers.Calendar.GetMyCalendar)
-		calendar.POST("/:calendarId/generate", handlers.GenerateTask.GenerateTasks)
-
-		// members manager
-		calendar.GET("/:calendarId/members", handlers.Member.GetMembers)
-		calendar.GET("/:calendarId/members/:memberId", handlers.Member.GetMemberId)
-		calendar.POST("/:calendarId/members", handlers.Member.CreateNewMember)
-
-		// calendar.POST("/members", handlers.Member.CreateNewMember)
-		// calendar.GET("/members/:memberId", handlers.Member.GetMemberId)
-		// calendar.PUT("/members/:memberId", handlers.Member.EditMemberInfo)
-		// calendar.DELETE("/members/:memberId", handlers.Member.DeleteMember)
+		calendar.GET("/", pkg.BuildGetController(handlers.Calendar.GetMyCalendar))
 
 	}
 

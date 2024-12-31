@@ -1,4 +1,4 @@
-package request
+package dto
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-type Member struct {
+type RequestMember struct {
 	ImageURL    string `json:"imageURL"`
 	Name        string `json:"name"`
 	Nickname    string `json:"nickname"`
@@ -17,7 +17,7 @@ type Member struct {
 	Telephone   string `json:"telephone"`
 }
 
-type CreateNewMember struct {
+type RequestCreateNewMember struct {
 	Name        string                `form:"name"`
 	NickName    string                `form:"nickname"`
 	Color       string                `form:"color"`
@@ -28,7 +28,7 @@ type CreateNewMember struct {
 	File        *multipart.FileHeader `form:"image"`
 }
 
-func (newMember *CreateNewMember) Validate() error {
+func (newMember *RequestCreateNewMember) Validate() error {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if newMember.Email != "" && !emailRegex.MatchString(newMember.Email) {
 		return fmt.Errorf("Validate: field 'Email' format validate failed")
