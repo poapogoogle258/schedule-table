@@ -14,6 +14,7 @@ import (
 type Handlers struct {
 	Calendar handler.CalendarsHandler
 	Auth     handler.AuthHandler
+	Member   handler.MemberHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -27,13 +28,13 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	// CorsConfig.ExposeHeaders = []string{"Content-Length"}
 	// CorsConfig.AllowCredentials = true
 	// CorsConfig.MaxAge = 60 * 60
+
 	router.Use(cors.Default())
 
 	router.Use(gin.Logger())
 	router.Use(gin.CustomRecovery(CustomRecovery))
 
 	auth := router.Group("/auth")
-
 	{
 		auth.POST("/login", handlers.Auth.Login)
 		auth.GET("/validate", handlers.Auth.ValidateToken)
@@ -45,6 +46,10 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	{
 		calendar := api.Group("/calendars")
 		calendar.GET("/", pkg.BuildGetController(handlers.Calendar.GetMyCalendar))
+
+		calendar.GET("/:calendarId/members", pkg.BuildGetController(handlers.Member.GetMembers))
+		calendar.POST("/:calendarId/members", pkg.BuildPostController(handlers.Member.CreateNewMember))
+		calendar.GET("/:calendarId/members/:memberId", pkg.BuildGetController(handlers.Member.GetMemberId))
 
 	}
 
