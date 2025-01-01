@@ -10,8 +10,8 @@ import (
 	"github.com/google/wire"
 	"schedule_table/internal/database"
 	"schedule_table/internal/handler"
+	"schedule_table/internal/http/router"
 	"schedule_table/internal/repository"
-	"schedule_table/internal/router"
 	"schedule_table/internal/service"
 )
 
@@ -21,19 +21,12 @@ func Injector() *router.Handlers {
 	db := database.ConnectPostgresql()
 	calendarRepository := repository.NewCalendarRepository(db)
 	calendarsHandler := handler.NewCalendarsHandler(calendarRepository)
-	schedulesRepository := repository.NewSchedulesRepository(db)
-	recurrenceService := service.NewRecurrenceService()
-	generateTaskHandler := handler.NewGenerateTaskHandler(calendarRepository, schedulesRepository, recurrenceService)
 	jwtService := service.NewJWTAuthService()
 	userRepository := repository.NewUserRepository(db)
 	authHandler := handler.NewAuthHandler(jwtService, userRepository)
-	membersRepository := repository.NewMemberRepository(db)
-	memberHandler := handler.NewMemberHandler(membersRepository)
 	handlers := &router.Handlers{
-		Calendar:     calendarsHandler,
-		GenerateTask: generateTaskHandler,
-		Auth:         authHandler,
-		Member:       memberHandler,
+		Calendar: calendarsHandler,
+		Auth:     authHandler,
 	}
 	return handlers
 }
@@ -43,9 +36,5 @@ func Injector() *router.Handlers {
 var (
 	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository)
 
-	generateTaskSet = wire.NewSet(handler.NewGenerateTaskHandler, repository.NewSchedulesRepository, service.NewRecurrenceService)
-
 	authSet = wire.NewSet(handler.NewAuthHandler, repository.NewUserRepository, service.NewJWTAuthService)
-
-	calSet = wire.NewSet(handler.NewMemberHandler, repository.NewMemberRepository)
 )

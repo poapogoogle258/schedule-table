@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"schedule_table/internal/router"
+	"schedule_table/internal/http/router"
 
 	"github.com/joho/godotenv"
 )

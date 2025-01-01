@@ -41,7 +41,9 @@ func (s *AuthHandlerImpl) Login(c *gin.Context) {
 
 	if util.VerifyPassword(request.Password, user.Password) {
 		token := s.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
-		s.userRepo.UpdateOneById(user.Id.String(), "token", token)
+		if err := s.userRepo.UpdateOneById(user.Id.String(), "token", token); err != nil {
+			panic(err)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"token": token,
 		})

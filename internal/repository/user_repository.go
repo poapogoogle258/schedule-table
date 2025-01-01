@@ -10,7 +10,7 @@ import (
 type UserRepository interface {
 	FindUser(userId string) *dao.Users
 	FineUserEmail(email string) *dao.Users
-	UpdateOneById(userId string, column string, value any)
+	UpdateOneById(userId string, column string, value any) error
 }
 
 type UserRepositoryImpl struct {
@@ -36,8 +36,8 @@ func (u *UserRepositoryImpl) FineUserEmail(email string) *dao.Users {
 	return user
 }
 
-func (u *UserRepositoryImpl) UpdateOneById(userId string, column string, value any) {
-	u.db.Model(&dao.Users{}).Where("id = ?", userId).Update(column, value)
+func (u *UserRepositoryImpl) UpdateOneById(userId string, column string, value any) error {
+	return u.db.Model(&dao.Users{}).Where("id = ?", userId).Update(column, value).Error
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
