@@ -16,11 +16,18 @@ func Null() interface{} {
 
 func PanicHandler(c *gin.Context) {
 	if err := recover(); err != nil {
+
 		str := fmt.Sprint(err)
 		strArr := strings.Split(str, ":")
 
-		key := strArr[0]
-		msg := strings.Trim(strArr[1], " ")
+		var key, msg string
+		if len(strArr) > 1 {
+			key = strArr[0]
+			msg = strings.Trim(strArr[1], " ")
+		} else {
+			key = "UNKNOWN"
+			msg = strings.Trim(strArr[0], " ")
+		}
 
 		switch key {
 		case constant.DataNotFound.GetResponseStatus():

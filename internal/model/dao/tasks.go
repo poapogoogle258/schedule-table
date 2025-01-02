@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Tasks struct {
@@ -19,4 +20,10 @@ type Tasks struct {
 	UpdatedAt  time.Time `json:"updatedAt"`
 	Person     Members   `gorm:"foreignKey:member_id" json:"person"`
 	// Description Schedules `gorm:"foreignKey:schedule_id" json:"description"`
+}
+
+func (task *Tasks) BeforeCreate(tx *gorm.DB) (err error) {
+	task.Id = uuid.New()
+
+	return
 }

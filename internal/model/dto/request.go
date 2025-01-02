@@ -28,6 +28,14 @@ type RequestCreateNewMember struct {
 	File        *multipart.FileHeader `form:"image"`
 }
 
+func (reqCreateMember *RequestCreateNewMember) ImageURL() string {
+	if reqCreateMember.File != nil {
+		return reqCreateMember.File.Filename
+	}
+
+	return ""
+}
+
 func (newMember *RequestCreateNewMember) Validate() error {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if newMember.Email != "" && !emailRegex.MatchString(newMember.Email) {

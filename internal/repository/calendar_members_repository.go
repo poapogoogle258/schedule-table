@@ -12,7 +12,10 @@ import (
 type MembersRepository interface {
 	GetMemberId(memberId string) (*dto.ResponseMember, error)
 	GetMembers(calendarId string) (*[]dto.ResponseMember, error)
-	CreateNewMember(calendarId string, req *dto.RequestCreateNewMember) (*dto.ResponseMember, error)
+	CreateNewMember(newMember *dao.Members) (*dto.ResponseMember, error)
+	EditMember(memberId string, insert *dao.Members) (*dto.ResponseMember, error)
+	ExistMemberId(calendarId string, memberId string) bool
+	DeleteMemberId(calendarId string, memberId string) error
 }
 
 type membersRepository struct {
@@ -39,20 +42,7 @@ func (m *membersRepository) GetMembers(calendarId string) (*[]dto.ResponseMember
 	return Members, nil
 }
 
-func (m *membersRepository) CreateNewMember(calendarId string, req *dto.RequestCreateNewMember) (*dto.ResponseMember, error) {
-
-	newMember := &dao.Members{
-		Id:          uuid.New(),
-		ImageURL:    req.File.Filename,
-		CalendarId:  util.Must(uuid.Parse(calendarId)),
-		Name:        req.Name,
-		Nickname:    req.NickName,
-		Color:       req.Color,
-		Description: req.Description,
-		Position:    req.Position,
-		Email:       req.Email,
-		Telephone:   req.Telephone,
-	}
+func (m *membersRepository) CreateNewMember(newMember *dao.Members) (*dto.ResponseMember, error) {
 
 	if err := m.db.Model(&dao.Members{}).Create(&newMember).Error; err != nil {
 		return nil, err
@@ -64,6 +54,32 @@ func (m *membersRepository) CreateNewMember(calendarId string, req *dto.RequestC
 	}
 
 	return responseMember, nil
+}
+
+func (m *membersRepository) EditMember(memberId string, insert *dao.Members) (*dto.ResponseMember, error) {
+
+	if err := m.db.Model(&dao.Members{Id: util.Must(uuid.Parse(memberId))}).Updates(insert).Error; err != nil {
+		return nil, err
+	}
+
+	var member *dto.ResponseMember
+	if err := m.db.Model(&dao.Members{}).First(&member, `id = ?`, memberId).Error; err != nil {
+		return nil, err
+	}
+
+	return member, nil
+
+}
+
+func (m *membersRepository) ExistMemberId(calendarId string, memberId string) bool {
+	var countMember int64
+	m.db.Model(&dao.Members{}).Where("id = ? AND calendar_id = ?", memberId, calendarId).Count(&countMember)
+
+	return countMember > 0
+}
+
+func (m *membersRepository) DeleteMemberId(calendarId string, memberId string) error {
+	return m.db.Delete(&dao.Members{}, "id = ? AND calendar_id = ?", memberId, calendarId).Error
 }
 
 func NewMemberRepository(db *gorm.DB) MembersRepository {

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Leaves struct {
@@ -18,4 +19,10 @@ type Leaves struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	Member      Members   `gorm:"references:id"`
+}
+
+func (leave *Leaves) BeforeCreate(tx *gorm.DB) (err error) {
+	leave.Id = uuid.New()
+
+	return
 }

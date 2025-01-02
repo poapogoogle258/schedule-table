@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Members struct {
@@ -20,4 +21,10 @@ type Members struct {
 	LastTimeTask *time.Time `gorm:"column:lastTimeTask" json:"lastTimeTask"`
 	Leaves       *[]Leaves  `gorm:"foreignKey:member_id" json:"leaves"`
 	BaseModel
+}
+
+func (mem *Members) BeforeCreate(tx *gorm.DB) (err error) {
+	mem.Id = uuid.New()
+
+	return
 }

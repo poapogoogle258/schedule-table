@@ -50,7 +50,8 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		calendar.GET("/:calendarId/members", pkg.BuildGetController(handlers.Member.GetMembers))
 		calendar.POST("/:calendarId/members", pkg.BuildPostController(handlers.Member.CreateNewMember))
 		calendar.GET("/:calendarId/members/:memberId", pkg.BuildGetController(handlers.Member.GetMemberId))
-
+		calendar.PATCH("/:calendarId/members/:memberId", pkg.BuildPatchController(handlers.Member.EditMember))
+		calendar.DELETE("/:calendarId/members/:memberId", pkg.BuildDeleteController(handlers.Member.DeleteMemberId))
 	}
 
 	return router

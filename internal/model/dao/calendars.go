@@ -2,6 +2,7 @@ package dao
 
 import (
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Calendars struct {
@@ -15,4 +16,10 @@ type Calendars struct {
 	Schedules   []*Schedules `gorm:"foreignKey:calendar_id" json:"schedules"`
 	Tasks       []*Tasks     `gorm:"foreignKey:calendar_id" json:"tasks"`
 	BaseModel
+}
+
+func (cal *Calendars) BeforeCreate(tx *gorm.DB) (err error) {
+	cal.Id = uuid.New()
+
+	return
 }
