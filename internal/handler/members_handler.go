@@ -28,13 +28,30 @@ type memberHandler struct {
 }
 
 func (mh *memberHandler) GetMembers(c *gin.Context) (*[]dto.ResponseMember, error) {
+	response := &[]dto.ResponseMember{}
 
-	return mh.memberRepo.GetMembers(c.Param("calendarId"))
+	result, err := mh.memberRepo.GetMembers(c.Param("calendarId"))
+	if err != nil {
+		return nil, err
+	}
+
+	copier.Copy(&response, &result)
+
+	return response, nil
 }
 
 func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error) {
 
-	return mh.memberRepo.GetMemberId(c.Param("memberId"))
+	response := &dto.ResponseMember{}
+
+	result, err := mh.memberRepo.GetMemberId(c.Param("memberId"))
+	if err != nil {
+		return nil, err
+	}
+
+	copier.Copy(&response, &result)
+
+	return response, nil
 }
 
 func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, error) {
@@ -52,11 +69,18 @@ func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, e
 	}
 
 	insert := &dao.Members{}
-
 	copier.Copy(insert, &req)
 	insert.CalendarId = uuid.Must(uuid.Parse(c.Param("calendarId")))
 
-	return mh.memberRepo.CreateNewMember(insert)
+	result, err := mh.memberRepo.CreateNewMember(insert)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.ResponseMember{}
+	copier.Copy(&response, &result)
+
+	return response, nil
 }
 
 func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error) {
@@ -83,11 +107,17 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 
 	insertData := &dao.Members{}
 	copier.Copy(insertData, &req)
-
 	insertData.CalendarId = uuid.Must(uuid.Parse(calendarId))
 
-	return mh.memberRepo.EditMember(memberId, insertData)
+	result, err := mh.memberRepo.EditMember(memberId, insertData)
+	if err != nil {
+		return nil, err
+	}
 
+	response := &dto.ResponseMember{}
+	copier.Copy(&response, &result)
+
+	return response, nil
 }
 
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {

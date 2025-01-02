@@ -2,18 +2,15 @@ package repository
 
 import (
 	"schedule_table/internal/model/dao"
-	"schedule_table/internal/model/dto"
-	"schedule_table/util"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type MembersRepository interface {
-	GetMemberId(memberId string) (*dto.ResponseMember, error)
-	GetMembers(calendarId string) (*[]dto.ResponseMember, error)
-	CreateNewMember(newMember *dao.Members) (*dto.ResponseMember, error)
-	EditMember(memberId string, insert *dao.Members) (*dto.ResponseMember, error)
+	GetMemberId(memberId string) (*dao.Members, error)
+	GetMembers(calendarId string) (*[]dao.Members, error)
+	CreateNewMember(newMember *dao.Members) (*dao.Members, error)
+	EditMember(memberId string, insert *dao.Members) (*dao.Members, error)
 	ExistMemberId(calendarId string, memberId string) bool
 	DeleteMemberId(calendarId string, memberId string) error
 }
@@ -22,48 +19,45 @@ type membersRepository struct {
 	db *gorm.DB
 }
 
-func (m *membersRepository) GetMemberId(memberId string) (*dto.ResponseMember, error) {
-	var member *dto.ResponseMember
+func (m *membersRepository) GetMemberId(memberId string) (*dao.Members, error) {
+	var member *dao.Members
 
-	if err := m.db.Model(&dao.Members{}).First(&member, "id = ?", memberId).Error; err != nil {
+	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}
+
+	if err := m.db.Model(&dao.Members{}).Select(selectedField).First(&member, "id = ?", memberId).Error; err != nil {
 		return nil, err
 	}
 
 	return member, nil
 }
 
-func (m *membersRepository) GetMembers(calendarId string) (*[]dto.ResponseMember, error) {
-	var Members *[]dto.ResponseMember
+func (m *membersRepository) GetMembers(calendarId string) (*[]dao.Members, error) {
+	var members *[]dao.Members
+	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}
 
-	if err := m.db.Model(&dao.Members{}).Find(&Members, "calendar_id = ?", calendarId).Error; err != nil {
+	if err := m.db.Model(&dao.Members{}).Select(selectedField).Find(&members, "calendar_id = ?", calendarId).Error; err != nil {
 		return nil, err
 	}
 
-	return Members, nil
+	return members, nil
 }
 
-func (m *membersRepository) CreateNewMember(newMember *dao.Members) (*dto.ResponseMember, error) {
+func (m *membersRepository) CreateNewMember(newMember *dao.Members) (*dao.Members, error) {
 
 	if err := m.db.Model(&dao.Members{}).Create(&newMember).Error; err != nil {
 		return nil, err
 	}
 
-	var responseMember *dto.ResponseMember
-	if err := m.db.Model(&dao.Members{}).First(&responseMember, newMember.Id).Error; err != nil {
-		return nil, err
-	}
-
-	return responseMember, nil
+	return newMember, nil
 }
 
-func (m *membersRepository) EditMember(memberId string, insert *dao.Members) (*dto.ResponseMember, error) {
-
-	if err := m.db.Model(&dao.Members{Id: util.Must(uuid.Parse(memberId))}).Updates(insert).Error; err != nil {
+func (m *membersRepository) EditMember(memberId string, insert *dao.Members) (*dao.Members, error) {
+	var member *dao.Members
+	if err := m.db.Model(&dao.Members{}).First(&member, "id = ?", memberId).Error; err != nil {
 		return nil, err
 	}
 
-	var member *dto.ResponseMember
-	if err := m.db.Model(&dao.Members{}).First(&member, `id = ?`, memberId).Error; err != nil {
+	if err := m.db.Model(&member).Updates(insert).Error; err != nil {
 		return nil, err
 	}
 
