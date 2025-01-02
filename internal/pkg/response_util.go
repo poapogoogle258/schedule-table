@@ -1,21 +1,38 @@
 package pkg
 
-import "schedule_table/internal/constant"
+import "net/http"
 
 type ApiResponse[T any] struct {
-	ResponseKey     string `json:"response_key"`
+	ResponseCode    int    `json:"response_code"`
 	ResponseMessage string `json:"response_message"`
 	Data            T      `json:"data"`
 }
 
-func BuildResponse[T any](responseStatus constant.ResponseStatus, data T) ApiResponse[T] {
-	return BuildResponse_(responseStatus.GetResponseStatus(), responseStatus.GetResponseMessage(), data)
+func BuildResponse[T any](responseStatusCode int, data T) ApiResponse[T] {
+	return BuildResponse_(responseStatusCode, http.StatusText(responseStatusCode), data)
 }
 
-func BuildResponse_[T any](status string, message string, data T) ApiResponse[T] {
+func BuildResponse_[T any](code int, message string, data T) ApiResponse[T] {
 	return ApiResponse[T]{
-		ResponseKey:     status,
+		ResponseCode:    code,
 		ResponseMessage: message,
 		Data:            data,
+	}
+}
+
+// for Error Response
+type ApiWithoutResponse struct {
+	ResponseCode    int    `json:"response_code"`
+	ResponseMessage string `json:"response_message"`
+}
+
+func BuildWithoutResponse(responseStatusCode int, msg string) ApiWithoutResponse {
+	return BuildWithoutResponse_(responseStatusCode, msg)
+}
+
+func BuildWithoutResponse_(code int, message string) ApiWithoutResponse {
+	return ApiWithoutResponse{
+		ResponseCode:    code,
+		ResponseMessage: message,
 	}
 }

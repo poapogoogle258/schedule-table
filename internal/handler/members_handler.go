@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"schedule_table/internal/model/dao"
@@ -89,15 +90,15 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 
 	var req dto.RequestCreateNewMember
 	if err := c.ShouldBind(&req); err != nil {
-		return nil, pkg.ErrorWithStatusCode{Code: http.StatusBadRequest, Err: err}
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, pkg.ErrorWithStatusCode{Code: http.StatusBadRequest, Err: err}
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
 	if !mh.memberRepo.ExistMemberId(calendarId, memberId) {
-		return nil, pkg.ErrorWithStatusCode{Code: http.StatusBadRequest, Err: fmt.Errorf("EditMember: not fount member id in calendar")}
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
 	}
 
 	if req.File != nil {
@@ -125,11 +126,10 @@ func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {
 	calendarId := c.Param("calendarId")
 
 	if !mh.memberRepo.ExistMemberId(calendarId, memberId) {
-		return pkg.ErrorWithStatusCode{Code: http.StatusBadRequest, Err: fmt.Errorf("DeleteMemberId: not fount member id in calendar")}
+		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
 	}
 
 	return mh.memberRepo.DeleteMemberId(calendarId, memberId)
-
 }
 
 func NewMemberHandler(memberRepo repository.MembersRepository) MemberHandler {

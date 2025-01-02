@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"fmt"
+	"errors"
 	"mime/multipart"
 	"regexp"
 )
@@ -39,17 +39,17 @@ func (reqCreateMember *RequestCreateNewMember) ImageURL() string {
 func (newMember *RequestCreateNewMember) Validate() error {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if newMember.Email != "" && !emailRegex.MatchString(newMember.Email) {
-		return fmt.Errorf("Validate: field 'Email' format validate failed")
+		return errors.New("field 'Email' format validate failed")
 	}
 
 	colorRegex := regexp.MustCompile(`^#[a-fA-F0-9]{6}$`)
 	if newMember.Color != "" && !colorRegex.MatchString(newMember.Color) {
-		return fmt.Errorf("Validate: field 'Color' format validate failed")
+		return errors.New("field 'Color' format validate failed")
 	}
 
 	telephoneRegex := regexp.MustCompile(`^[0-9]{10}$`)
 	if newMember.Telephone != "" && !telephoneRegex.MatchString(newMember.Telephone) {
-		return fmt.Errorf("Validate: field 'Telephone' format validate failed")
+		return errors.New("field 'Telephone' format validate failed")
 	}
 
 	return nil

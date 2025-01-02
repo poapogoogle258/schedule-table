@@ -1,47 +1,27 @@
 package pkg
 
 import (
-	"fmt"
-	"schedule_table/internal/constant"
+	"errors"
 
 	"github.com/gin-gonic/gin"
-
-	"net/http"
-	"strings"
+	"gorm.io/gorm"
 )
 
-func Null() interface{} {
-	return nil
-}
+func ErrorHandler(c *gin.Context, err error) {
+	var (
+		code int
+		// message string
+	)
 
-func PanicHandler(c *gin.Context) {
-	if err := recover(); err != nil {
-
-		str := fmt.Sprint(err)
-		strArr := strings.Split(str, ":")
-
-		var key, msg string
-		if len(strArr) > 1 {
-			key = strArr[0]
-			msg = strings.Trim(strArr[1], " ")
-		} else {
-			key = "UNKNOWN"
-			msg = strings.Trim(strArr[0], " ")
-		}
-
-		switch key {
-		case constant.DataNotFound.GetResponseStatus():
-			c.JSON(http.StatusBadRequest, BuildResponse_(key, msg, Null()))
-			c.Abort()
-		case constant.Unauthorized.GetResponseStatus():
-			c.JSON(http.StatusUnauthorized, BuildResponse_(key, msg, Null()))
-			c.Abort()
-		case constant.InvalidRequest.GetResponseStatus():
-			c.JSON(http.StatusBadRequest, BuildResponse_(key, msg, Null()))
-			c.Abort()
-		default:
-			c.JSON(http.StatusInternalServerError, BuildResponse_(key, msg, Null()))
-			c.Abort()
-		}
+	switch {
+	case errors.As(err, &ErrorWithStatusCode{}):
+		code = err.(ErrorWithStatusCode).Code
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		code = 400
+	default:
+		code = 500
 	}
+
+	c.JSON(code, BuildWithoutResponse(code, err.Error()))
+	c.Abort()
 }
