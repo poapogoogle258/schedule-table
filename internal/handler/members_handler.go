@@ -36,7 +36,9 @@ func (mh *memberHandler) GetMembers(c *gin.Context) (*[]dto.ResponseMember, erro
 		return nil, err
 	}
 
-	copier.Copy(&response, &result)
+	if err := copier.Copy(&response, &result); err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
@@ -50,13 +52,17 @@ func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error
 		return nil, err
 	}
 
-	copier.Copy(&response, &result)
+	if err := copier.Copy(&response, &result); err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
 
 func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, error) {
 	var req dto.RequestCreateNewMember
+
+	// TODO : must send calendarId in from request
 	if err := c.ShouldBind(&req); err != nil {
 		panic(err)
 	}
@@ -79,7 +85,9 @@ func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, e
 	}
 
 	response := &dto.ResponseMember{}
-	copier.Copy(&response, &result)
+	if err := copier.Copy(&response, &result); err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
@@ -116,8 +124,9 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 	}
 
 	response := &dto.ResponseMember{}
-	copier.Copy(&response, &result)
-
+	if err := copier.Copy(&response, &result); err != nil {
+		return nil, err
+	}
 	return response, nil
 }
 

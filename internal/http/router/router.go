@@ -15,6 +15,7 @@ type Handlers struct {
 	Calendar handler.CalendarsHandler
 	Auth     handler.AuthHandler
 	Member   handler.MemberHandler
+	Schedule handler.ScheduleHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -45,13 +46,22 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 
 	{
 		calendar := api.Group("/calendars")
+
+		// calendar
 		calendar.GET("/", pkg.BuildGetController(handlers.Calendar.GetMyCalendar))
 
+		// members
 		calendar.GET("/:calendarId/members", pkg.BuildGetController(handlers.Member.GetMembers))
 		calendar.POST("/:calendarId/members", pkg.BuildPostController(handlers.Member.CreateNewMember))
 		calendar.GET("/:calendarId/members/:memberId", pkg.BuildGetController(handlers.Member.GetMemberId))
 		calendar.PATCH("/:calendarId/members/:memberId", pkg.BuildPatchController(handlers.Member.EditMember))
 		calendar.DELETE("/:calendarId/members/:memberId", pkg.BuildDeleteController(handlers.Member.DeleteMemberId))
+
+		// schedule
+		calendar.GET("/:calendarId/schedules", pkg.BuildGetController(handlers.Schedule.GetSchedules))
+		calendar.GET("/:calendarId/schedules/:scheduleId", pkg.BuildGetController(handlers.Schedule.GetScheduleId))
+		calendar.POST("/:calendarId/schedules", pkg.BuildPostController(handlers.Schedule.CreateNewSchedule))
+
 	}
 
 	return router

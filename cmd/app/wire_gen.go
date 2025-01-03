@@ -26,10 +26,13 @@ func Injector() *router.Handlers {
 	authHandler := handler.NewAuthHandler(jwtService, userRepository)
 	membersRepository := repository.NewMemberRepository(db)
 	memberHandler := handler.NewMemberHandler(membersRepository)
+	scheduleRepository := repository.NewScheduleRepository(db)
+	scheduleHandler := handler.NewScheduleHandler(scheduleRepository)
 	handlers := &router.Handlers{
 		Calendar: calendarsHandler,
 		Auth:     authHandler,
 		Member:   memberHandler,
+		Schedule: scheduleHandler,
 	}
 	return handlers
 }
@@ -42,4 +45,6 @@ var (
 	authSet = wire.NewSet(handler.NewAuthHandler, repository.NewUserRepository, service.NewJWTAuthService)
 
 	memberSet = wire.NewSet(handler.NewMemberHandler, repository.NewMemberRepository)
+
+	scheduleSet = wire.NewSet(handler.NewScheduleHandler, repository.NewScheduleRepository)
 )

@@ -23,10 +23,10 @@ type Schedules struct {
 	BreakTime            uint32         `gorm:"column:breaktime;default:0" json:"breaktime"`
 	Recurrence_freq      int8           `gorm:"column:recurrence_freq" json:"recurrence_freq"` // YEARLY=0,MONTHLY,WEEKLY,DAILY,HOURLY,MINUTELY,SECONDLY
 	Recurrence_interval  int32          `gorm:"column:recurrence_interval" json:"recurrence_interval"`
-	Recurrence_wkst      string         `gorm:"column:recurrence_wkst" json:"recurrence_wkst"`
+	Recurrence_count     int32          `gorm:"column:recurrence_count" json:"recurrence_count"`
 	Recurrence_bymonth   string         `gorm:"column:recurrence_bymonth" json:"recurrence_bymonth"`
 	Recurrence_byweekday string         `gorm:"column:recurrence_byweekday" json:"recurrence_byweekday"`
-	Members_responsible  *[]Responsible `gorm:"foreignKey:schedule_id;" json:"members_responsible"`
+	Responsibles         *[]Responsible `gorm:"foreignKey:schedule_id;" json:"Responsibles"`
 	BaseModel
 }
 
