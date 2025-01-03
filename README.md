@@ -3,5 +3,8 @@ project automate schedule resource management
 
 implement by golang programming use gin framework
 
-framework : gin
+framework : gin, grom
 database  : postgresql16
+
+![screenshot](doc/design_demo.png)
+*** design demo application
