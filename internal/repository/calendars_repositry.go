@@ -6,56 +6,62 @@ import (
 
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type CalendarRepository interface {
-	GetMyCalendars(ownerId string) (*[]dto.ResponseCalendar, error)
-	IsOwnerCalendar(userId string, calendarId string) bool
-	GetLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) *[]dao.Leaves
-	GetMembersOfCalendarId(calendarId string) *[]dao.Members
+	FindMembersOfCalendarId(calendarId string) (*[]dao.Members, error)
+	FindLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) (*[]dao.Leaves, error)
+	IsOwnerOfCalendar(userId string, calendarId string) bool
+	FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error)
 }
 
-type CalendarRepositoryImpl struct {
+type calendarRepository struct {
 	db *gorm.DB
 }
 
-func (s *CalendarRepositoryImpl) GetMyCalendars(ownerId string) (*[]dto.ResponseCalendar, error) {
+func (calRepo *calendarRepository) FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error) {
 	var calendars *[]dto.ResponseCalendar
-	user_uuid, _ := uuid.Parse(ownerId)
 
-	if err := s.db.Model(&dao.Calendars{}).Find(&calendars, "user_id = ?", user_uuid).Error; err != nil {
+	if err := calRepo.db.Model(&dao.Calendars{}).Find(&calendars, "user_id = ?", ownerId).Error; err != nil {
 		return nil, err
 	}
 
 	return calendars, nil
 }
 
-func (s *CalendarRepositoryImpl) IsOwnerCalendar(userId string, calendarId string) bool {
-	var calendar *dao.Calendars
-	s.db.Select("id").Find(&calendar, "id = ? AND user_id = ?", calendarId, userId)
+func (calRepo *calendarRepository) IsOwnerOfCalendar(userId string, calendarId string) bool {
+	var count int64
+	calRepo.db.Model(&dao.Calendars{}).Where("id = ? AND user_id = ?", calendarId, userId).Count(&count)
 
-	return calendar != nil
-
+	return count > 0
 }
 
-func (s *CalendarRepositoryImpl) GetLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) *[]dao.Leaves {
+func (calRepo *calendarRepository) FindLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) (*[]dao.Leaves, error) {
 	var leaves *[]dao.Leaves
-	s.db.Find(&leaves)
+	result := calRepo.db.Model(&dao.Leaves{}).
+		Where("calendar_id = ?", calendarId).
+		Where("(start BETWEEN ? AND ?) OR (end BETWEEN ? AND ?)", start, end, start, end).
+		Find(&leaves)
 
-	return leaves
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return leaves, nil
 }
 
-func (s *CalendarRepositoryImpl) GetMembersOfCalendarId(calendarId string) *[]dao.Members {
+func (calRepo *calendarRepository) FindMembersOfCalendarId(calendarId string) (*[]dao.Members, error) {
 	var members *[]dao.Members
-	s.db.Preload("Leaves").Find(&members, "calendar_id = ?", calendarId)
+	if err := calRepo.db.Preload("Leaves").Find(&members, "calendar_id = ?", calendarId).Error; err != nil {
+		return nil, err
+	}
 
-	return members
+	return members, nil
 }
 
 func NewCalendarRepository(db *gorm.DB) CalendarRepository {
-	return &CalendarRepositoryImpl{
+	return &calendarRepository{
 		db: db,
 	}
 }

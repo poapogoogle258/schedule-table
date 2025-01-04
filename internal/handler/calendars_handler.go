@@ -18,7 +18,7 @@ type calendarsHandler struct {
 func (ch *calendarsHandler) GetMyCalendar(c *gin.Context) (*[]dto.ResponseCalendar, error) {
 	userId := c.GetString("requestAuthUserId")
 
-	return ch.calRepo.GetMyCalendars(userId)
+	return ch.calRepo.FindByOwnerId(userId)
 }
 
 func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {
