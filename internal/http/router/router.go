@@ -2,10 +2,13 @@ package router
 
 import (
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"schedule_table/internal/handler"
 	"schedule_table/internal/http/middleware"
 	"schedule_table/internal/pkg"
+	"schedule_table/util"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -61,8 +64,33 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		calendar.GET("/:calendarId/schedules", pkg.BuildGetController(handlers.Schedule.GetSchedules))
 		calendar.GET("/:calendarId/schedules/:scheduleId", pkg.BuildGetController(handlers.Schedule.GetScheduleId))
 		calendar.POST("/:calendarId/schedules", pkg.BuildPostController(handlers.Schedule.CreateNewSchedule))
+		calendar.PATCH("/:calendarId/schedules/:scheduleId", pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
+		calendar.DELETE("/:calendarId/schedules/:scheduleId", pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
 
 	}
+
+	type Form struct {
+		File *multipart.FileHeader `form:"file" binding:"required"`
+	}
+	router.POST("/upload", func(c *gin.Context) {
+		var form Form
+		if err := c.ShouldBind(&form); err != nil {
+			panic(err)
+		}
+
+		form.File.Filename = fmt.Sprintf(`%v.%s`, time.Now().UnixMicro(), util.GetExpressionFile(form.File.Filename))
+		c.SaveUploadedFile(form.File, "../../upload/public/"+form.File.Filename)
+
+		c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, struct {
+			Filename string `json:"filename"`
+			Url      string `json:"url"`
+		}{
+			Filename: form.File.Filename,
+			Url:      "/upload/" + form.File.Filename,
+		}))
+		c.Abort()
+	})
+	router.Static("/upload", "../../upload/public")
 
 	return router
 }

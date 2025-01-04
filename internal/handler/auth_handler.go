@@ -37,11 +37,14 @@ func (s *AuthHandlerImpl) Login(c *gin.Context) {
 		})
 	}
 
-	user := s.userRepo.FineUserEmail(request.Email)
+	user, err := s.userRepo.FindOneByEmail(request.Email)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{})
+	}
 
 	if util.VerifyPassword(request.Password, user.Password) {
 		token := s.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
-		if err := s.userRepo.UpdateOneById(user.Id.String(), "token", token); err != nil {
+		if err := s.userRepo.UpdateOne(user.Id.String(), "token", token); err != nil {
 			panic(err)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -81,8 +84,8 @@ func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 }
 
 func (s *AuthHandlerImpl) CheckUserTokenExist(claims *service.AuthCustomClaims, token string) error {
-	user := s.userRepo.FindUser(claims.UserId)
-	if user == nil {
+	user, err := s.userRepo.FindOne(claims.UserId)
+	if err != nil {
 		return fmt.Errorf("not found this user")
 	} else if user.Token != token {
 		return fmt.Errorf("token duplicate, try login again")

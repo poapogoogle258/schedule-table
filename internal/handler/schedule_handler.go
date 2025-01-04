@@ -15,6 +15,8 @@ type ScheduleHandler interface {
 	GetSchedules(c *gin.Context) (*[]dto.ResponseSchedule, error)
 	GetScheduleId(c *gin.Context) (*dto.ResponseSchedule, error)
 	CreateNewSchedule(c *gin.Context) (*dto.ResponseSchedule, error)
+	UpdateSchedule(c *gin.Context) (*dto.ResponseSchedule, error)
+	DeleteSchedule(c *gin.Context) error
 }
 
 type scheduleHandler struct {
@@ -62,6 +64,8 @@ func (scheHandler *scheduleHandler) CreateNewSchedule(c *gin.Context) (*dto.Resp
 		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request"))
 	}
 
+	// TODO : Validate request
+
 	insert := &dao.Schedules{}
 	if err := copier.Copy(&insert, &req); err != nil {
 		return nil, err
@@ -78,6 +82,43 @@ func (scheHandler *scheduleHandler) CreateNewSchedule(c *gin.Context) (*dto.Resp
 	}
 
 	return response, nil
+
+}
+
+func (scheHandler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ResponseSchedule, error) {
+	scheduleId := c.Param("scheduleId")
+
+	var req *dto.RequestSchedule
+	if err := c.ShouldBind(&req); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(400, err)
+	}
+
+	// TODO : Validate request
+	// TODO : CheckExit schedule id
+
+	insert := &dao.Schedules{}
+	if err := copier.Copy(&insert, &req); err != nil {
+		return nil, err
+	}
+
+	result, err := scheHandler.scheduleRepo.UpdateSchedule(scheduleId, insert)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.ResponseSchedule{}
+	if err := copier.Copy(&response, &result); err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
+}
+
+func (scheHandler *scheduleHandler) DeleteSchedule(c *gin.Context) error {
+	scheduleId := c.Param("scheduleId")
+
+	return scheHandler.scheduleRepo.Delete(scheduleId)
 
 }
 

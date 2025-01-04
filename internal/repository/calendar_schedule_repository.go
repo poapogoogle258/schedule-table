@@ -3,6 +3,7 @@ package repository
 import (
 	"schedule_table/internal/model/dao"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -10,6 +11,8 @@ type ScheduleRepository interface {
 	GetSchedulesCalendar(calendarId string) (*[]dao.Schedules, error)
 	GetScheduleCalendarId(calendarId string, scheduleId string) (*dao.Schedules, error)
 	CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error)
+	UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error)
+	Delete(scheduleId string) error
 }
 
 type scheduleRepository struct {
@@ -49,6 +52,28 @@ func (scheduleRepo *scheduleRepository) CreateNewSchedule(insert *dao.Schedules)
 	}
 
 	return schedule, nil
+}
+
+func (scheduleRepo *scheduleRepository) UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error) {
+
+	insert.Id = uuid.MustParse(scheduleId)
+
+	if err := scheduleRepo.db.Save(&insert).Error; err != nil {
+		return nil, err
+	}
+
+	var schedule *dao.Schedules
+	if err := scheduleRepo.db.Model(&dao.Schedules{}).Preload("Responsibles.Person").First(&schedule, "id = ?", scheduleId).Error; err != nil {
+		return nil, err
+	}
+
+	return schedule, nil
+
+}
+
+func (scheduleRepo *scheduleRepository) Delete(scheduleId string) error {
+
+	return scheduleRepo.db.Delete(&dao.Schedules{Id: uuid.MustParse(scheduleId)}).Error
 }
 
 func NewScheduleRepository(db *gorm.DB) ScheduleRepository {

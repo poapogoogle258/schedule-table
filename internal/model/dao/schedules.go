@@ -27,11 +27,26 @@ type Schedules struct {
 	Recurrence_bymonth   string         `gorm:"column:recurrence_bymonth" json:"recurrence_bymonth"`
 	Recurrence_byweekday string         `gorm:"column:recurrence_byweekday" json:"recurrence_byweekday"`
 	Responsibles         *[]Responsible `gorm:"foreignKey:schedule_id;" json:"Responsibles"`
-	BaseModel
+	CreatedAt            time.Time      `gorm:"index;column:created_at" json:"-"`
+	UpdatedAt            time.Time      `gorm:"index;column:updated_at" json:"-"`
 }
 
 func (schedule *Schedules) BeforeCreate(tx *gorm.DB) (err error) {
 	schedule.Id = uuid.New()
 
-	return
+	return nil
+}
+
+func (schedule *Schedules) BeforeSave(tx *gorm.DB) (err error) {
+	if schedule.Responsibles != nil {
+		tx.Delete(&Responsible{}, "schedule_id = ?", schedule.Id)
+	}
+
+	return nil
+}
+
+func (schedule *Schedules) BeforeDelete(tx *gorm.DB) (err error) {
+	tx.Delete(&Responsible{}, "schedule_id = ?", schedule.Id)
+
+	return nil
 }
