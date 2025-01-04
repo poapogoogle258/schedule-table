@@ -13,6 +13,7 @@ type ScheduleRepository interface {
 	CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error)
 	UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error)
 	Delete(scheduleId string) error
+	IsExits(scheduleId string) bool
 }
 
 type scheduleRepository struct {
@@ -74,6 +75,15 @@ func (scheduleRepo *scheduleRepository) UpdateSchedule(scheduleId string, insert
 func (scheduleRepo *scheduleRepository) Delete(scheduleId string) error {
 
 	return scheduleRepo.db.Delete(&dao.Schedules{Id: uuid.MustParse(scheduleId)}).Error
+}
+
+func (scheduleRepo *scheduleRepository) IsExits(scheduleId string) bool {
+	var count int64
+	if err := scheduleRepo.db.Model(&dao.Schedules{}).Where("id = ?", scheduleId).Count(&count).Error; err != nil {
+		panic(err)
+	}
+
+	return count > 0
 }
 
 func NewScheduleRepository(db *gorm.DB) ScheduleRepository {

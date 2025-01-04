@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
@@ -94,7 +95,10 @@ func (scheHandler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.Respons
 	}
 
 	// TODO : Validate request
-	// TODO : CheckExit schedule id
+
+	if !scheHandler.scheduleRepo.IsExits(scheduleId) {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, errors.New("not fount this schedule id"))
+	}
 
 	insert := &dao.Schedules{}
 	if err := copier.Copy(&insert, &req); err != nil {

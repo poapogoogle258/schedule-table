@@ -80,3 +80,13 @@ func (resSchedule *ResponseSchedule) Recurrence_byweekday(s string) {
 func (resSchedule *ResponseSchedule) Recurrence_bymonth(s string) {
 	resSchedule.Recurrence.Bymonth = util.MapStringToInt(strings.Split(s, ","))
 }
+
+type ResponseTask struct {
+	Id         string        `json:"id"`
+	CalendarId string        `json:"calendar_id"`
+	ScheduleId string        `json:"schedule_id"`
+	Start      time.Time     `json:"start"`
+	End        time.Time     `json:"end"`
+	Status     int8          `json:"status"`
+	Person     RequestMember `json:"person"`
+}

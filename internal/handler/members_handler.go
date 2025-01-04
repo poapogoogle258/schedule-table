@@ -2,14 +2,11 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
-	"schedule_table/util"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -62,17 +59,11 @@ func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error
 func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, error) {
 	var req dto.RequestCreateNewMember
 
-	// TODO : must send calendarId in from request
 	if err := c.ShouldBind(&req); err != nil {
 		panic(err)
 	}
 	if err := req.Validate(); err != nil {
 		panic(err)
-	}
-
-	if req.File != nil {
-		req.File.Filename = fmt.Sprintf(`%v.%s`, time.Now().UnixMicro(), util.GetExpressionFile(req.File.Filename))
-		c.SaveUploadedFile(req.File, "../../upload/images/profile/"+req.File.Filename)
 	}
 
 	insert := &dao.Members{}
@@ -105,13 +96,8 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	if !mh.memberRepo.IsMemberExits(memberId) {
+	if !mh.memberRepo.IsExits(memberId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
-	}
-
-	if req.File != nil {
-		req.File.Filename = fmt.Sprintf(`%v.%s`, time.Now().UnixMicro(), util.GetExpressionFile(req.File.Filename))
-		c.SaveUploadedFile(req.File, "../../upload/images/profile/"+req.File.Filename)
 	}
 
 	insertData := &dao.Members{}
@@ -133,7 +119,7 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {
 	memberId := c.Param("memberId")
 
-	if !mh.memberRepo.IsMemberExits(memberId) {
+	if !mh.memberRepo.IsExits(memberId) {
 		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
 	}
 

@@ -47,8 +47,11 @@ func (s *AuthHandlerImpl) Login(c *gin.Context) {
 		if err := s.userRepo.UpdateOne(user.Id.String(), "token", token); err != nil {
 			panic(err)
 		}
+
+		decode, _ := s.jwtService.ValidateToken(token)
 		c.JSON(http.StatusOK, gin.H{
 			"token": token,
+			"exp":   decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
 		})
 	} else {
 		c.JSON(http.StatusForbidden, gin.H{})

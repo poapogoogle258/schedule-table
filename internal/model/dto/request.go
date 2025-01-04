@@ -2,7 +2,6 @@ package dto
 
 import (
 	"errors"
-	"mime/multipart"
 	"regexp"
 	"schedule_table/internal/model/dao"
 	"schedule_table/util"
@@ -25,22 +24,14 @@ type RequestMember struct {
 }
 
 type RequestCreateNewMember struct {
-	Name        string                `form:"name"`
-	NickName    string                `form:"nickname"`
-	Color       string                `form:"color"`
-	Description string                `form:"description"`
-	Position    string                `form:"position"`
-	Email       string                `form:"email"`
-	Telephone   string                `form:"telephone"`
-	File        *multipart.FileHeader `form:"image"`
-}
-
-func (reqCreateMember *RequestCreateNewMember) ImageURL() string {
-	if reqCreateMember.File != nil {
-		return reqCreateMember.File.Filename
-	}
-
-	return ""
+	Name        string `json:"name"`
+	NickName    string `json:"nickname"`
+	Color       string `json:"color"`
+	Description string `json:"description"`
+	Position    string `json:"position"`
+	Email       string `json:"email"`
+	Telephone   string `json:"telephone"`
+	ImageURL    string `json:"imageURL"`
 }
 
 func (newMember *RequestCreateNewMember) Validate() error {
@@ -58,6 +49,8 @@ func (newMember *RequestCreateNewMember) Validate() error {
 	if newMember.Telephone != "" && !telephoneRegex.MatchString(newMember.Telephone) {
 		return errors.New("field 'Telephone' format validate failed")
 	}
+
+	// TODO: validate ImageURL
 
 	return nil
 }
@@ -77,6 +70,10 @@ type RequestSchedule struct {
 	BreakTime        uint32           `json:"breaktime"`
 	Recurrence       Recurrence       `json:"recurrence"`
 	Members          []ResponseMember `json:"members"`
+}
+
+func (reqSchedule *RequestSchedule) Validate() error {
+	return nil
 }
 
 func (reqSchedule *RequestSchedule) Recurrence_freq() int8 {

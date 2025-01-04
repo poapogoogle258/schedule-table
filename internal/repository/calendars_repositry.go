@@ -14,6 +14,8 @@ type CalendarRepository interface {
 	FindLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) (*[]dao.Leaves, error)
 	IsOwnerOfCalendar(userId string, calendarId string) bool
 	FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error)
+	IsExits(calendarId string) bool
+	FindOneWithAssociation(calendarId string) (*dao.Calendars, error)
 }
 
 type calendarRepository struct {
@@ -58,6 +60,32 @@ func (calRepo *calendarRepository) FindMembersOfCalendarId(calendarId string) (*
 	}
 
 	return members, nil
+}
+
+func (calRepo *calendarRepository) IsExits(calendarId string) bool {
+	var count int64
+	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Count(&count).Error; err != nil {
+		panic(err)
+	}
+
+	return count > 0
+
+}
+
+func (calRepo *calendarRepository) FindOneWithAssociation(calendarId string) (*dao.Calendars, error) {
+	calendar := &dao.Calendars{}
+	if err := calRepo.db.
+		Preload("Members").
+		Preload("Leaves").
+		Preload("Schedules.Responsibles", func(db *gorm.DB) *gorm.DB {
+			return db.Order("responsibles.queue ASC")
+		}).
+		First(&calendar, "calendars.id = ?", calendarId).Error; err != nil {
+		return nil, err
+	}
+
+	return calendar, nil
+
 }
 
 func NewCalendarRepository(db *gorm.DB) CalendarRepository {

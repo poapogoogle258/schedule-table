@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"schedule_table/internal/handler"
 	"schedule_table/internal/http/middleware"
 	"schedule_table/internal/pkg"
@@ -19,6 +20,7 @@ type Handlers struct {
 	Auth     handler.AuthHandler
 	Member   handler.MemberHandler
 	Schedule handler.ScheduleHandler
+	Task     handler.TasksHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -67,6 +69,9 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		calendar.PATCH("/:calendarId/schedules/:scheduleId", pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
 		calendar.DELETE("/:calendarId/schedules/:scheduleId", pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
 
+		//task
+		calendar.GET("/:calendarId/tasks", pkg.BuildGetController(handlers.Task.GetTasks))
+
 	}
 
 	type Form struct {
@@ -86,7 +91,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			Url      string `json:"url"`
 		}{
 			Filename: form.File.Filename,
-			Url:      "/upload/" + form.File.Filename,
+			Url:      os.Getenv("HOST") + "/upload/" + form.File.Filename,
 		}))
 		c.Abort()
 	})

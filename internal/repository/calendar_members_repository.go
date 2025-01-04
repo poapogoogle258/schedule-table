@@ -13,7 +13,7 @@ type MembersRepository interface {
 	FindByCalendarId(calendarId string) (*[]dao.Members, error)
 	Create(newMember *dao.Members) (*dao.Members, error)
 	UpdateOne(memberId string, insert *dao.Members) (*dao.Members, error)
-	IsMemberExits(memberId string) bool
+	IsExits(memberId string) bool
 	DeleteOne(memberId string) error
 }
 
@@ -69,7 +69,7 @@ func (memRepo *membersRepository) UpdateOne(memberId string, insert *dao.Members
 	return member, nil
 }
 
-func (memRepo *membersRepository) IsMemberExits(memberId string) bool {
+func (memRepo *membersRepository) IsExits(memberId string) bool {
 	var countMember int64
 	if err := memRepo.db.Model(&dao.Members{}).Where("id = ?", memberId).Count(&countMember).Error; err != nil {
 		panic(err)

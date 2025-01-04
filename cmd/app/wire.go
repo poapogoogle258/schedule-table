@@ -34,11 +34,15 @@ var (
 		handler.NewScheduleHandler,
 		repository.NewScheduleRepository,
 	)
+
+	taskSet = wire.NewSet(
+		handler.NewTasksHandler,
+	)
 )
 
 func Injector() *router.Handlers {
 
-	wire.Build(scheduleSet, memberSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
+	wire.Build(taskSet, scheduleSet, memberSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
 
 	return &router.Handlers{}
 
