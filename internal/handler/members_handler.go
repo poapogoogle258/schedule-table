@@ -31,7 +31,7 @@ type memberHandler struct {
 func (mh *memberHandler) GetMembers(c *gin.Context) (*[]dto.ResponseMember, error) {
 	response := &[]dto.ResponseMember{}
 
-	result, err := mh.memberRepo.GetMembers(c.Param("calendarId"))
+	result, err := mh.memberRepo.FindByCalendarId(c.Param("calendarId"))
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error
 
 	response := &dto.ResponseMember{}
 
-	result, err := mh.memberRepo.GetMemberId(c.Param("memberId"))
+	result, err := mh.memberRepo.FindOne(c.Param("memberId"))
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, e
 	copier.Copy(insert, &req)
 	insert.CalendarId = uuid.Must(uuid.Parse(c.Param("calendarId")))
 
-	result, err := mh.memberRepo.CreateNewMember(insert)
+	result, err := mh.memberRepo.Create(insert)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	if !mh.memberRepo.ExistMemberId(calendarId, memberId) {
+	if !mh.memberRepo.IsMemberExits(memberId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
 	}
 
@@ -118,7 +118,7 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 	copier.Copy(insertData, &req)
 	insertData.CalendarId = uuid.Must(uuid.Parse(calendarId))
 
-	result, err := mh.memberRepo.EditMember(memberId, insertData)
+	result, err := mh.memberRepo.UpdateOne(memberId, insertData)
 	if err != nil {
 		return nil, err
 	}
@@ -132,13 +132,12 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {
 	memberId := c.Param("memberId")
-	calendarId := c.Param("calendarId")
 
-	if !mh.memberRepo.ExistMemberId(calendarId, memberId) {
+	if !mh.memberRepo.IsMemberExits(memberId) {
 		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
 	}
 
-	return mh.memberRepo.DeleteMemberId(calendarId, memberId)
+	return mh.memberRepo.DeleteOne(memberId)
 }
 
 func NewMemberHandler(memberRepo repository.MembersRepository) MemberHandler {

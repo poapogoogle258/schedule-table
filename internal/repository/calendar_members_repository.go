@@ -3,77 +3,83 @@ package repository
 import (
 	"schedule_table/internal/model/dao"
 
+	"github.com/google/uuid"
+	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type MembersRepository interface {
-	GetMemberId(memberId string) (*dao.Members, error)
-	GetMembers(calendarId string) (*[]dao.Members, error)
-	CreateNewMember(newMember *dao.Members) (*dao.Members, error)
-	EditMember(memberId string, insert *dao.Members) (*dao.Members, error)
-	ExistMemberId(calendarId string, memberId string) bool
-	DeleteMemberId(calendarId string, memberId string) error
+	FindOne(memberId string) (*dao.Members, error)
+	FindByCalendarId(calendarId string) (*[]dao.Members, error)
+	Create(newMember *dao.Members) (*dao.Members, error)
+	UpdateOne(memberId string, insert *dao.Members) (*dao.Members, error)
+	IsMemberExits(memberId string) bool
+	DeleteOne(memberId string) error
 }
 
 type membersRepository struct {
 	db *gorm.DB
 }
 
-func (m *membersRepository) GetMemberId(memberId string) (*dao.Members, error) {
+func selectColumnMember(db *gorm.DB) *gorm.DB {
+	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}
+	return db.Select(selectedField)
+}
+
+func (memRepo *membersRepository) FindOne(memberId string) (*dao.Members, error) {
 	var member *dao.Members
 
-	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}
-
-	if err := m.db.Model(&dao.Members{}).Select(selectedField).First(&member, "id = ?", memberId).Error; err != nil {
+	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).First(&member, "id = ?", memberId).Error; err != nil {
 		return nil, err
 	}
 
 	return member, nil
 }
 
-func (m *membersRepository) GetMembers(calendarId string) (*[]dao.Members, error) {
+func (memRepo *membersRepository) FindByCalendarId(calendarId string) (*[]dao.Members, error) {
 	var members *[]dao.Members
-	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}
 
-	if err := m.db.Model(&dao.Members{}).Select(selectedField).Find(&members, "calendar_id = ?", calendarId).Error; err != nil {
+	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).Find(&members, "calendar_id = ?", calendarId).Error; err != nil {
 		return nil, err
 	}
 
 	return members, nil
 }
 
-func (m *membersRepository) CreateNewMember(newMember *dao.Members) (*dao.Members, error) {
+func (memRepo *membersRepository) Create(newMember *dao.Members) (*dao.Members, error) {
 
-	if err := m.db.Model(&dao.Members{}).Create(&newMember).Error; err != nil {
+	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).Create(&newMember).Error; err != nil {
 		return nil, err
 	}
 
 	return newMember, nil
 }
 
-func (m *membersRepository) EditMember(memberId string, insert *dao.Members) (*dao.Members, error) {
-	var member *dao.Members
-	if err := m.db.Model(&dao.Members{}).First(&member, "id = ?", memberId).Error; err != nil {
-		return nil, err
-	}
+func (memRepo *membersRepository) UpdateOne(memberId string, insert *dao.Members) (*dao.Members, error) {
 
-	if err := m.db.Model(&member).Updates(insert).Error; err != nil {
+	member := &dao.Members{}
+	copier.Copy(&member, &insert)
+
+	member.Id = uuid.MustParse(memberId)
+
+	if err := memRepo.db.Scopes(selectColumnMember).Updates(&member).Error; err != nil {
 		return nil, err
 	}
 
 	return member, nil
-
 }
 
-func (m *membersRepository) ExistMemberId(calendarId string, memberId string) bool {
+func (memRepo *membersRepository) IsMemberExits(memberId string) bool {
 	var countMember int64
-	m.db.Model(&dao.Members{}).Where("id = ? AND calendar_id = ?", memberId, calendarId).Count(&countMember)
+	if err := memRepo.db.Model(&dao.Members{}).Where("id = ?", memberId).Count(&countMember).Error; err != nil {
+		panic(err)
+	}
 
 	return countMember > 0
 }
 
-func (m *membersRepository) DeleteMemberId(calendarId string, memberId string) error {
-	return m.db.Delete(&dao.Members{}, "id = ? AND calendar_id = ?", memberId, calendarId).Error
+func (memRepo *membersRepository) DeleteOne(memberId string) error {
+	return memRepo.db.Delete(&dao.Members{}, "id = ?", memberId).Error
 }
 
 func NewMemberRepository(db *gorm.DB) MembersRepository {
