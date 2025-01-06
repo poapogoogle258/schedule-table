@@ -1,6 +1,8 @@
 package util
 
-import "strconv"
+import (
+	"strconv"
+)
 
 func Map[TSource, TTarget any](source []TSource, trans func(TSource) TTarget) []TTarget {
 	target := make([]TTarget, 0, len(source))

@@ -6,16 +6,20 @@ import (
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
+	"schedule_table/internal/service"
+	"schedule_table/util"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type TasksHandler interface {
-	GetTasks(c *gin.Context) (*dao.Calendars, error)
+	GetTasks(c *gin.Context) (*[]dao.Tasks, error)
 }
 
 type tasksHandler struct {
-	CalRepo repository.CalendarRepository
+	CalRepo     repository.CalendarRepository
+	ScheService service.IScheduleService
 }
 
 type queryStringGetTasks struct {
@@ -24,7 +28,7 @@ type queryStringGetTasks struct {
 	Action string `form:"action" binding:"required"`
 }
 
-func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*dao.Calendars, error) {
+func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dao.Tasks, error) {
 	var query queryStringGetTasks
 	if err := c.BindQuery(&query); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("query string not validate"))
@@ -35,20 +39,28 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*dao.Calendars, error
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not found calendar id"))
 	}
 
-	// start := util.Must(time.Parse(time.RFC3339, query.Start))
-	// end := util.Must(time.Parse(time.RFC3339, query.End))
+	start := util.Must(time.Parse(time.RFC3339, query.Start))
+	end := util.Must(time.Parse(time.RFC3339, query.End))
 
-	calendar, errFindCalendar := taskHandler.CalRepo.FindOneWithAssociation(calendarId)
+	calendar, errFindCalendar := taskHandler.CalRepo.FindOneWithAssociation(calendarId, start, end)
 	if errFindCalendar != nil {
 		return nil, errFindCalendar
 	}
 
-	return calendar, nil
+	calendarTasks := make([]dao.Tasks, 0)
 
+	for i := 0; i < len(*calendar.Schedules); i++ {
+		schedule := (*calendar.Schedules)[i]
+		tasks := taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
+		calendarTasks = append(calendarTasks, (*tasks)...)
+	}
+
+	return &calendarTasks, nil
 }
 
-func NewTasksHandler(calRepo repository.CalendarRepository) TasksHandler {
+func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService) TasksHandler {
 	return &tasksHandler{
-		CalRepo: calRepo,
+		CalRepo:     calRepo,
+		ScheService: scheService,
 	}
 }

@@ -21,6 +21,7 @@ type Schedules struct {
 	Hr_end               string         `gorm:"column:hr_end" json:"hr_end"`
 	Tzid                 string         `gorm:"column:tzid;default:Asia/Bangkok" json:"tzid"`
 	BreakTime            uint32         `gorm:"column:breaktime;default:0" json:"breaktime"`
+	UseNumberPeople      int64          `gorm:"column:use_number_people;default:1" json:"use_number_people"`
 	Recurrence_freq      int8           `gorm:"column:recurrence_freq" json:"recurrence_freq"` // YEARLY=0,MONTHLY,WEEKLY,DAILY,HOURLY,MINUTELY,SECONDLY
 	Recurrence_interval  int32          `gorm:"column:recurrence_interval" json:"recurrence_interval"`
 	Recurrence_count     int32          `gorm:"column:recurrence_count" json:"recurrence_count"`
