@@ -165,15 +165,14 @@ func getInt8(s string) int8 {
 }
 
 func hrTimeDuration(a, b hrTime) time.Duration {
-	nano := 1000000000
-	nanosecondA := int64(a.H*60*60*nano) + int64(a.M*60*nano)
-	nanosecondB := int64(b.H*60*60*nano) + int64(b.M*60*nano)
+	nanosecondStart := (time.Duration(a.H) * time.Hour) + (time.Duration(a.M) * time.Minute)
+	nanosecondEnd := (time.Duration(b.H) * time.Hour) + (time.Duration(b.M) * time.Minute)
 
-	if nanosecondA < nanosecondB {
-		nanosecondA = nanosecondA + int64(24*60*60*nano)
+	if nanosecondStart > nanosecondEnd {
+		nanosecondEnd = nanosecondEnd + (time.Duration(24) * time.Hour)
 	}
 
-	return time.Duration(nanosecondA - nanosecondB)
+	return time.Duration(nanosecondEnd - nanosecondStart)
 }
 
 func NewScheduleService() IScheduleService {
