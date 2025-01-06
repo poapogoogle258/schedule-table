@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"schedule_table/internal/model/dao"
+	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
@@ -11,10 +12,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 type TasksHandler interface {
-	GetTasks(c *gin.Context) (*[]dao.Tasks, error)
+	GetTasks(c *gin.Context) (*[]dto.ResponseTask, error)
 }
 
 type tasksHandler struct {
@@ -28,7 +30,7 @@ type queryStringGetTasks struct {
 	Action string `form:"action" binding:"required"`
 }
 
-func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dao.Tasks, error) {
+func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, error) {
 	var query queryStringGetTasks
 	if err := c.BindQuery(&query); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("query string not validate"))
@@ -55,7 +57,12 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dao.Tasks, error) 
 		calendarTasks = append(calendarTasks, (*tasks)...)
 	}
 
-	return &calendarTasks, nil
+	response := &[]dto.ResponseTask{}
+	if err := copier.Copy(&response, &calendarTasks); err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService) TasksHandler {

@@ -30,6 +30,8 @@ type Schedule struct {
 	Id                  uuid.UUID
 	CalendarId          uuid.UUID
 	Priority            int8
+	DateStart           *time.Time
+	DateEnd             *time.Time
 	TimeStart           hrTime
 	TimeEnd             hrTime
 	Tzid                *time.Location
@@ -67,8 +69,17 @@ func (schedule *Schedule) GenerateTasks(start time.Time, end time.Time) *[]dao.T
 		option.Byweekday = schedule.RecurrenceByWeekday
 	}
 
-	option.Dtstart = time.Date(start.Year(), start.Month(), start.Day(), schedule.TimeStart.H, schedule.TimeStart.M, 0, 0, schedule.Tzid)
-	option.Until = time.Date(end.Year(), end.Month(), end.Day(), schedule.TimeEnd.H, schedule.TimeEnd.M, 0, 0, schedule.Tzid)
+	if schedule.DateStart != nil && schedule.DateStart.Before(start) {
+		option.Dtstart = *schedule.DateStart
+	} else {
+		option.Dtstart = time.Date(start.Year(), start.Month(), start.Day(), schedule.TimeStart.H, schedule.TimeStart.M, 0, 0, schedule.Tzid)
+	}
+
+	if schedule.DateEnd != nil && schedule.DateEnd.After(end) {
+		option.Until = *schedule.DateEnd
+	} else {
+		option.Until = time.Date(end.Year(), end.Month(), end.Day(), schedule.TimeEnd.H, schedule.TimeEnd.M, 0, 0, schedule.Tzid)
+	}
 
 	scheduleRule, ErrRule := rrule.NewRRule(option)
 	if ErrRule != nil {
@@ -82,13 +93,16 @@ func (schedule *Schedule) GenerateTasks(start time.Time, end time.Time) *[]dao.T
 
 	for i := 0; i < len(recurrenceSchedule); i++ {
 		for number := 1; number <= schedule.UseNumberPeople; number++ {
+			tasksStart := recurrenceSchedule[i]
+			tasksEnd := recurrenceSchedule[i].Add(duration)
+
 			tasks = append(tasks, dao.Tasks{
 				Id:         uuid.New(),
 				ScheduleId: schedule.Id,
 				CalendarId: schedule.CalendarId,
 				Priority:   schedule.Priority,
-				Start:      recurrenceSchedule[i],
-				End:        recurrenceSchedule[i].Add(duration),
+				Start:      tasksStart,
+				End:        tasksEnd,
 			})
 		}
 	}
@@ -103,6 +117,8 @@ func (scheService *ScheduleService) NewSchedule(schedule *dao.Schedules) ISchedu
 	service.Id = schedule.Id
 	service.CalendarId = schedule.CalendarId
 	service.Priority = schedule.Priority
+	service.DateStart = schedule.Start
+	service.DateEnd = schedule.End
 	service.TimeStart = parseHrTime(schedule.Hr_start)
 	service.TimeEnd = parseHrTime(schedule.Hr_end)
 

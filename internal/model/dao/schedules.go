@@ -15,8 +15,8 @@ type Schedules struct {
 	Description          string         `gorm:"column:description;default:-" json:"description"`
 	ImageURL             string         `gorm:"column:imageURL;default:default-image-schedule.jpeg" json:"imageURL"`
 	Priority             int8           `gorm:"column:priority" json:"priority"`
-	Start                time.Time      `gorm:"column:start" json:"start"`
-	End                  time.Time      `gorm:"column:end" json:"end"`
+	Start                *time.Time     `gorm:"column:start" json:"start"`
+	End                  *time.Time     `gorm:"column:end" json:"end"`
 	Hr_start             string         `gorm:"column:hr_start" json:"hr_start"`
 	Hr_end               string         `gorm:"column:hr_end" json:"hr_end"`
 	Tzid                 string         `gorm:"column:tzid;default:Asia/Bangkok" json:"tzid"`
