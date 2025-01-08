@@ -29,6 +29,7 @@ type ISchedule interface {
 type Schedule struct {
 	Id                  uuid.UUID
 	CalendarId          uuid.UUID
+	MasterScheduleId    *uuid.UUID
 	Priority            int8
 	DateStart           *time.Time
 	DateEnd             *time.Time
@@ -116,6 +117,7 @@ func (scheService *ScheduleService) NewSchedule(schedule *dao.Schedules) ISchedu
 
 	service.Id = schedule.Id
 	service.CalendarId = schedule.CalendarId
+	service.MasterScheduleId = schedule.MasterScheduleId
 	service.Priority = schedule.Priority
 	service.DateStart = schedule.Start
 	service.DateEnd = schedule.End

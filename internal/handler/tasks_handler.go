@@ -9,6 +9,7 @@ import (
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 	"schedule_table/util"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,12 +58,26 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 		calendarTasks = append(calendarTasks, (*tasks)...)
 	}
 
+	slices.SortFunc(calendarTasks, softByDateTimeAndPriority)
+
 	response := &[]dto.ResponseTask{}
 	if err := copier.Copy(&response, &calendarTasks); err != nil {
 		return nil, err
 	}
 
 	return response, nil
+}
+
+func softByDateTimeAndPriority(a, b dao.Tasks) int {
+	if c := a.Start.Compare(b.Start); c == 0 {
+		if a.Priority > b.Priority {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return c
+	}
 }
 
 func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService) TasksHandler {
