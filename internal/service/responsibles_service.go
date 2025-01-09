@@ -32,9 +32,8 @@ func (queue *QueueResponsible) Next(i int) Worker {
 func (queue *QueueResponsible) Select(i int) {
 	if i != len(queue.Members)-1 {
 		queue.Members = append(queue.Members[:i], append(queue.Members[i+1:], queue.Members[i])...) // move worker to last queue
-	} else {
-		// TO DO:
 	}
+	// TO DO : skip queue in loop
 
 	queue.SkipIndex = 0
 }
@@ -50,8 +49,7 @@ func NewResponsibleQueue(scheduleId uuid.UUID, responsible *[]dao.Responsible) I
 	members := make([]Worker, len_responsible)
 
 	for i := 0; i < len(members); i++ {
-		responsibleQueue := (*responsible)[i]
-		members[i] = NewMemberWorker(&responsibleQueue.Person)
+		members[i] = NewMemberWorker(&(*responsible)[i].Person)
 	}
 
 	return &QueueResponsible{

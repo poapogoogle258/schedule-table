@@ -21,6 +21,7 @@ type Handlers struct {
 	Member   handler.MemberHandler
 	Schedule handler.ScheduleHandler
 	Task     handler.TasksHandler
+	Leave    handler.LeaveHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -71,6 +72,11 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 
 		//task
 		calendar.GET("/:calendarId/tasks", pkg.BuildGetController(handlers.Task.GetTasks))
+
+		//leave
+		calendar.GET("/:calendarId/leaves", pkg.BuildGetController(handlers.Leave.GetLeave))
+		calendar.POST("/:calendarId/leaves", pkg.BuildPostController(handlers.Leave.CreateNewLeave))
+		calendar.DELETE("/:calendarId/leaves/:leaveId", pkg.BuildDeleteController(handlers.Leave.Delete))
 
 	}
 

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"cmp"
 	"errors"
 	"schedule_table/internal/model/dao"
 	"time"
@@ -22,6 +21,7 @@ var (
 	ErrMemberNotReady     = errors.New("worker in rest time")
 	ErrMemberIsLeaven     = errors.New("worker is leaven")
 	ErrMemberReserved     = errors.New("worker was reserved")
+	ErrTaskIsReserved     = errors.New("task is reserved")
 )
 
 type Member struct {
@@ -50,7 +50,7 @@ type AddTaskOption struct {
 
 func (member *Member) AddTask(task *dao.Tasks, restTime time.Duration, options ...func(*AddTaskOption)) error {
 	addTaskOption := &AddTaskOption{}
-	for i, _ := range options {
+	for i := range options {
 		options[i](addTaskOption)
 	}
 
@@ -67,7 +67,12 @@ func (member *Member) AddTask(task *dao.Tasks, restTime time.Duration, options .
 		return ErrMemberReserved
 	}
 
+	if task.Reserved && !member.hasTaskReserved(task) {
+		return ErrTaskIsReserved
+	}
+
 	member.ReadyTime = task.End.Add(restTime)
+	task.Person = *member.Info
 	return nil
 }
 
@@ -135,6 +140,16 @@ func (member *Member) isReserved(task *dao.Tasks, restTime time.Duration) bool {
 	return false
 }
 
+func (member *Member) hasTaskReserved(task *dao.Tasks) bool {
+	for i := 0; i < len(member.Booking); i++ {
+		if task.Id == member.Booking[i].Id {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (member *Member) isReservedDay(day time.Time) bool {
 	for i := 0; i < len(member.Booking); i++ {
 		if member.Booking[i].Start.Format(time.DateOnly) == day.Format(time.DateOnly) ||
@@ -155,11 +170,10 @@ func sameOrAfter(t1, t2 time.Time) bool {
 }
 
 func NewMemberWorker(member *dao.Members) Worker {
-
 	return &Member{
 		Id:        member.Id,
 		Info:      member,
 		Available: true,
-		ReadyTime: cmp.Or(*member.LastTimeTask, member.CreatedAt),
+		ReadyTime: member.CreatedAt,
 	}
 }

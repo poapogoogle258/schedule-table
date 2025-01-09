@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 )
 
@@ -21,8 +22,10 @@ type TasksHandler interface {
 }
 
 type tasksHandler struct {
-	CalRepo     repository.CalendarRepository
-	ScheService service.IScheduleService
+	CalRepo        repository.CalendarRepository
+	ScheService    service.IScheduleService
+	ManagerService service.IManagerService
+	TaskRepo       repository.ITaskRepository
 }
 
 type queryStringGetTasks struct {
@@ -32,6 +35,7 @@ type queryStringGetTasks struct {
 }
 
 func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, error) {
+
 	var query queryStringGetTasks
 	if err := c.BindQuery(&query); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("query string not validate"))
@@ -50,15 +54,64 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 		return nil, errFindCalendar
 	}
 
+	managers := make(map[uuid.UUID]*service.Manager)
 	calendarTasks := make([]dao.Tasks, 0)
 
-	for i := 0; i < len(*calendar.Schedules); i++ {
-		schedule := (*calendar.Schedules)[i]
-		tasks := taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
-		calendarTasks = append(calendarTasks, (*tasks)...)
+	for loopMasterId := 0; loopMasterId < 2; loopMasterId++ {
+		for i := 0; i < len(*calendar.Schedules); i++ {
+			schedule := (*calendar.Schedules)[i]
+
+			if loopMasterId == 0 && schedule.MasterScheduleId == nil {
+				manager := taskHandler.ManagerService.NewManagerSchedule(&schedule)
+				manager.Tasks = taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
+
+				managers[manager.Id] = manager
+				calendarTasks = append(calendarTasks, (*manager.Tasks)...)
+			} else if loopMasterId == 1 && schedule.MasterScheduleId != nil {
+				masterId := *schedule.MasterScheduleId
+				if _, hasManager := managers[masterId]; !hasManager {
+					panic(errors.New("DO TO: load master queue to childe"))
+				}
+
+				manager := taskHandler.ManagerService.NewManagerScheduleWithQueue(&schedule, managers[masterId].Queue)
+				manager.Tasks = taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
+
+				managers[manager.Id] = manager
+				calendarTasks = append(calendarTasks, (*manager.Tasks)...)
+			}
+		}
 	}
 
 	slices.SortFunc(calendarTasks, softByDateTimeAndPriority)
+
+	taskReserved, _ := taskHandler.TaskRepo.Find("(start BETWEEN ? AND ?) AND (end BETWEEN ? AND ?) AND reserved = true", start, end, start, end)
+	if taskReserved != nil {
+		for i := 0; i < len(*taskReserved); i++ {
+			for j := 0; j < len(calendarTasks); j++ {
+				if checkTaskIsBooking(&(*taskReserved)[i], &calendarTasks[j]) {
+					calendarTasks[j] = (*taskReserved)[i]
+				}
+			}
+		}
+	}
+
+	for i := 0; i < len(calendarTasks); i++ {
+		task := &calendarTasks[i]
+
+		for n := 0; ; n++ {
+			if err := managers[task.ScheduleId].Queue.Next(n).AddTask(task, managers[task.ScheduleId].RestTime); err == nil {
+				managers[task.ScheduleId].Queue.Select(n)
+				managers[task.CalendarId].Count.Add(task.MemberId)
+				break
+			} else if errors.Is(err, service.ErrorSkipAllQueue) {
+				// skip is task
+				break
+			} else {
+				managers[task.ScheduleId].Queue.Skip()
+				// TO DO: Handler Force
+			}
+		}
+	}
 
 	response := &[]dto.ResponseTask{}
 	if err := copier.Copy(&response, &calendarTasks); err != nil {
@@ -66,6 +119,18 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 	}
 
 	return response, nil
+}
+
+func checkTaskIsBooking(task, generateTask *dao.Tasks) bool {
+	if generateTask.Reserved {
+		return false
+	}
+
+	if task.ScheduleId == generateTask.ScheduleId && task.Start.Equal(generateTask.Start) && task.End.Equal(generateTask.End) {
+		return true
+	} else {
+		return false
+	}
 }
 
 func softByDateTimeAndPriority(a, b dao.Tasks) int {
@@ -80,9 +145,11 @@ func softByDateTimeAndPriority(a, b dao.Tasks) int {
 	}
 }
 
-func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService) TasksHandler {
+func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService, managerService service.IManagerService, taskRepo repository.ITaskRepository) TasksHandler {
 	return &tasksHandler{
-		CalRepo:     calRepo,
-		ScheService: scheService,
+		CalRepo:        calRepo,
+		ScheService:    scheService,
+		ManagerService: managerService,
+		TaskRepo:       taskRepo,
 	}
 }

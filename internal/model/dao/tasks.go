@@ -16,6 +16,7 @@ type Tasks struct {
 	End        time.Time `gorm:"column:end" json:"end"`
 	Priority   int8      `gorm:"column:priority" json:"priority"`
 	Status     int8      `gorm:"column:status" json:"status"`
+	Reserved   bool      `gorm:"column:reserved;default:false" json:"reserved"`
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
 	Person     Members   `gorm:"foreignKey:member_id" json:"person"`

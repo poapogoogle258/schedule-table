@@ -13,12 +13,6 @@ import (
 	rrule "github.com/teambition/rrule-go"
 )
 
-type IScheduleService interface {
-	NewSchedule(schedule *dao.Schedules) ISchedule
-}
-
-type ScheduleService struct{}
-
 type ISchedule interface {
 	GetId() uuid.UUID
 	GetCalendarId() uuid.UUID
@@ -112,7 +106,7 @@ func (schedule *Schedule) GenerateTasks(start time.Time, end time.Time) *[]dao.T
 
 }
 
-func (scheService *ScheduleService) NewSchedule(schedule *dao.Schedules) ISchedule {
+func NewSchedule(schedule *dao.Schedules) ISchedule {
 	service := &Schedule{}
 
 	service.Id = schedule.Id
@@ -191,6 +185,17 @@ func hrTimeDuration(a, b hrTime) time.Duration {
 	}
 
 	return time.Duration(nanosecondEnd - nanosecondStart)
+}
+
+// export to ScheduleService
+type IScheduleService interface {
+	NewSchedule(schedule *dao.Schedules) ISchedule
+}
+
+type ScheduleService struct{}
+
+func (service *ScheduleService) NewSchedule(schedule *dao.Schedules) ISchedule {
+	return NewSchedule(schedule)
 }
 
 func NewScheduleService() IScheduleService {
