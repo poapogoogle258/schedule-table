@@ -19,6 +19,7 @@ import (
 
 type TasksHandler interface {
 	GetTasks(c *gin.Context) (*[]dto.ResponseTask, error)
+	ReserveMember(c *gin.Context) (*dao.Tasks, error)
 }
 
 type tasksHandler struct {
@@ -143,6 +144,40 @@ func softByDateTimeAndPriority(a, b dao.Tasks) int {
 	} else {
 		return c
 	}
+}
+
+type ReserveMemberQueryString struct {
+	MemberId string `form:"member_id"`
+	Reserved string `form:"reserved"`
+}
+
+func (handler *tasksHandler) ReserveMember(c *gin.Context) (*dao.Tasks, error) {
+	taskId := c.Param("taskId")
+	memberId := c.Param("memberId")
+
+	var query ReserveMemberQueryString
+	if err := c.ShouldBindQuery(&query); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request Must have 'member_id' and 'reserved' in query string"))
+	}
+
+	insert := map[string]interface{}{}
+	if query.Reserved == "true" {
+		insert["member_id"] = memberId
+		insert["reserved"] = true
+
+	} else if query.Reserved == "false" {
+		insert["reserved"] = false
+	} else {
+		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request in query field 'reserved' value must be 'true' or 'false'"))
+	}
+
+	task, errUpdate := handler.TaskRepo.UpdatesAndFind(taskId, insert)
+
+	if errUpdate != nil {
+		return nil, errUpdate
+	}
+
+	return task, nil
 }
 
 func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService, managerService service.IManagerService, taskRepo repository.ITaskRepository) TasksHandler {
