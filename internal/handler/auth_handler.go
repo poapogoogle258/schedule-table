@@ -3,6 +3,8 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"schedule_table/internal/model/dto"
+	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 
@@ -15,6 +17,7 @@ type AuthHandler interface {
 	Login(c *gin.Context)
 	ValidateToken(c *gin.Context)
 	CheckUserTokenExist(claims *service.AuthCustomClaims, token string) error
+	Profile(c *gin.Context)
 }
 
 type AuthHandlerImpl struct {
@@ -23,18 +26,18 @@ type AuthHandlerImpl struct {
 }
 
 type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 func (s *AuthHandlerImpl) Login(c *gin.Context) {
 
 	var request loginRequest
-	err := c.ShouldBind(&request)
-	if err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"message": "no data found",
 		})
+		return
 	}
 
 	user, err := s.userRepo.FindOneByEmail(request.Email)
@@ -57,6 +60,27 @@ func (s *AuthHandlerImpl) Login(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{})
 	}
 
+}
+
+func (handler *AuthHandlerImpl) Profile(c *gin.Context) {
+	const BEARER_SCHEMA = "Bearer "
+	authHeader := c.GetHeader("Authorization")
+	tokenString := authHeader[len(BEARER_SCHEMA):]
+
+	if token, err := handler.jwtService.ValidateToken(tokenString); err == nil {
+		claims := token.Claims.(*service.AuthCustomClaims)
+
+		if profile, err := handler.userRepo.Profile(claims.UserId); err != nil {
+			c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, err.Error()))
+			return
+		} else {
+			response := util.Convert[dto.ResponseProfile](&profile)
+			c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, response))
+			return
+		}
+	} else {
+		c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, "token invalid"))
+	}
 }
 
 func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {

@@ -85,7 +85,10 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 
 	slices.SortFunc(calendarTasks, softByDateTimeAndPriority)
 
-	taskReserved, _ := taskHandler.TaskRepo.Find("(start BETWEEN ? AND ?) AND (end BETWEEN ? AND ?) AND reserved = true", start, end, start, end)
+	taskReserved, _ := taskHandler.TaskRepo.Find("(start BETWEEN @start AND @end) AND ('end' BETWEEN @start AND @end) AND reserved = true", map[string]interface{}{
+		"start": start.UTC().Format(time.RFC3339),
+		"end":   end.UTC().Format(time.RFC3339),
+	})
 	if taskReserved != nil {
 		for i := 0; i < len(*taskReserved); i++ {
 			for j := 0; j < len(calendarTasks); j++ {
@@ -98,11 +101,10 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 
 	for i := 0; i < len(calendarTasks); i++ {
 		task := &calendarTasks[i]
-
 		for n := 0; ; n++ {
 			if err := managers[task.ScheduleId].Queue.Next(n).AddTask(task, managers[task.ScheduleId].RestTime); err == nil {
 				managers[task.ScheduleId].Queue.Select(n)
-				managers[task.CalendarId].Count.Add(task.MemberId)
+				managers[task.ScheduleId].Count.Add(task.MemberId)
 				break
 			} else if errors.Is(err, service.ErrorSkipAllQueue) {
 				// skip is task

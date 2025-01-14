@@ -72,6 +72,7 @@ func (member *Member) AddTask(task *dao.Tasks, restTime time.Duration, options .
 	}
 
 	member.ReadyTime = task.End.Add(restTime)
+	task.MemberId = member.Id
 	task.Person = *member.Info
 	return nil
 }

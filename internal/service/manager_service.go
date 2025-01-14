@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"schedule_table/internal/model/dao"
 	"time"
 
@@ -51,9 +50,6 @@ type Manager struct {
 }
 
 func NewManagerSchedule(schedule *dao.Schedules) *Manager {
-
-	fmt.Println("Queue", NewResponsibleQueue(schedule.Id, schedule.Responsibles))
-
 	return &Manager{
 		Id:               schedule.Id,
 		MasterScheduleId: schedule.MasterScheduleId,

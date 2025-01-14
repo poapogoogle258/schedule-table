@@ -90,3 +90,21 @@ type ResponseTask struct {
 	Status     int8          `json:"status"`
 	Person     RequestMember `json:"person"`
 }
+
+type ResponseProfile struct {
+	Id          string  `json:"id"`
+	Name        string  `json:"name"`
+	Email       string  `json:"email"`
+	ImageURL    string  `json:"imageURL"`
+	Description string  `json:"description"`
+	CalendarId  *string `json:"calendar_id"`
+}
+
+func (responseProfile *ResponseProfile) Calendar(cal *dao.Calendars) {
+	if cal != nil {
+		id := cal.Id.String()
+		responseProfile.CalendarId = &id
+	} else {
+		responseProfile.CalendarId = nil
+	}
+}

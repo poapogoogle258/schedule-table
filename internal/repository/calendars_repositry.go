@@ -78,7 +78,7 @@ func (calRepo *calendarRepository) FindOneWithAssociation(calendarId string, sta
 	if err := calRepo.db.
 		Preload("Members").
 		Preload("Leaves", func(db *gorm.DB) *gorm.DB {
-			return db.Where("leaves.start BETWEEN ? AND ?", start, end).Or("leaves.end BETWEEN ? AND ?", start, end).Order("leaves.start ASC")
+			return db.Where("leaves.date BETWEEN ? AND ?", start, end).Order("leaves.date ASC")
 		}).
 		Preload("Schedules.Responsibles", func(db *gorm.DB) *gorm.DB {
 			return db.Preload("Person").Order("responsibles.queue ASC")

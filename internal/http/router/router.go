@@ -28,15 +28,15 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 
 	router := gin.New()
 
-	// CorsConfig := cors.DefaultConfig()
-	// CorsConfig.AllowAllOrigins = true
-	// CorsConfig.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
-	// CorsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept", "User-Agent", "Cache-Control", "Pragma"}
-	// CorsConfig.ExposeHeaders = []string{"Content-Length"}
-	// CorsConfig.AllowCredentials = true
-	// CorsConfig.MaxAge = 60 * 60
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowCredentials = true
+	config.AllowMethods = []string{"POST", "GET", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept", "User-Agent", "Cache-Control", "Pragma", "x-requested-with"}
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.MaxAge = 12 * time.Hour
 
-	router.Use(cors.Default())
+	router.Use(cors.New(config))
 
 	router.Use(gin.Logger())
 	router.Use(gin.CustomRecovery(CustomRecovery))
@@ -44,7 +44,8 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/login", handlers.Auth.Login)
-		auth.GET("/validate", handlers.Auth.ValidateToken)
+		auth.GET("/profile", handlers.Auth.Profile)
+
 	}
 
 	api := router.Group("/api")
@@ -82,7 +83,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	}
 
 	type Form struct {
-		File *multipart.FileHeader `form:"file" binding:"required"`
+		File *multipart.FileHeader `form:"avatar" binding:"required"`
 	}
 	router.POST("/upload", func(c *gin.Context) {
 		var form Form
