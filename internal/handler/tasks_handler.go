@@ -43,8 +43,8 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 	}
 
 	calendarId := c.Param("calendarId")
-	if !taskHandler.CalRepo.IsExits(calendarId) {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not found calendar id"))
+	if err := taskHandler.CalRepo.CheckExist(calendarId); err != nil {
+		return nil, err
 	}
 
 	start := util.Must(time.Parse(time.RFC3339, query.Start))

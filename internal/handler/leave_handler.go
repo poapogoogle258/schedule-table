@@ -38,8 +38,8 @@ func (leaveHd *leaveHandler) GetLeave(c *gin.Context) (*[]dao.Leaves, error) {
 	}
 
 	calendarId := c.Param("calendarId")
-	if !leaveHd.CalRepo.IsExits(calendarId) {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not found calendar id"))
+	if err := leaveHd.CalRepo.CheckExist(calendarId); err != nil {
+		return nil, err
 	}
 
 	start := util.Must(time.Parse(time.DateOnly, query.Start))
@@ -67,8 +67,8 @@ func (leaveHd *leaveHandler) CreateNewLeave(c *gin.Context) (*dao.Leaves, error)
 	}
 
 	calendarId := c.Param("calendarId")
-	if !leaveHd.CalRepo.IsExits(calendarId) {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not found calendar id"))
+	if err := leaveHd.CalRepo.CheckExist(calendarId); err != nil {
+		return nil, err
 	}
 
 	userId := c.GetString("requestAuthUserId")
@@ -117,8 +117,9 @@ func NewDateOnlyFormat(s string) *DateOnlyFormat {
 func (leaveHd *leaveHandler) Delete(c *gin.Context) error {
 	leaveId := c.Param("leaveId")
 	calendarId := c.Param("calendarId")
-	if !leaveHd.CalRepo.IsExits(calendarId) {
-		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not found calendar id"))
+
+	if err := leaveHd.CalRepo.CheckExist(calendarId); err != nil {
+		return err
 	}
 
 	if !leaveHd.LeaveRepo.Exits(leaveId) {

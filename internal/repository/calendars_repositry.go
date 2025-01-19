@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 
@@ -9,12 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	ErrCalendarNotFount = errors.New("not fount calendar")
+)
+
 type CalendarRepository interface {
 	FindMembersOfCalendarId(calendarId string) (*[]dao.Members, error)
 	FindLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) (*[]dao.Leaves, error)
 	IsOwnerOfCalendar(userId string, calendarId string) bool
 	FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error)
-	IsExits(calendarId string) bool
+	CheckExist(calendarId string) error
 	FindOneWithAssociation(calendarId string, start time.Time, end time.Time) (*dao.Calendars, error)
 }
 
@@ -62,13 +67,17 @@ func (calRepo *calendarRepository) FindMembersOfCalendarId(calendarId string) (*
 	return members, nil
 }
 
-func (calRepo *calendarRepository) IsExits(calendarId string) bool {
+func (calRepo *calendarRepository) CheckExist(calendarId string) error {
 	var count int64
 	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Count(&count).Error; err != nil {
 		panic(err)
 	}
 
-	return count > 0
+	if count == 0 {
+		return ErrCalendarNotFount
+	} else {
+		return nil
+	}
 
 }
 

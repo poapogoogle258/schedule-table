@@ -25,7 +25,7 @@ func Injector() *router.Handlers {
 	userRepository := repository.NewUserRepository(db)
 	authHandler := handler.NewAuthHandler(jwtService, userRepository)
 	membersRepository := repository.NewMemberRepository(db)
-	memberHandler := handler.NewMemberHandler(membersRepository)
+	memberHandler := handler.NewMemberHandler(membersRepository, calendarRepository)
 	scheduleRepository := repository.NewScheduleRepository(db)
 	scheduleHandler := handler.NewScheduleHandler(scheduleRepository)
 	iScheduleService := service.NewScheduleService()

@@ -1,16 +1,15 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
+	"schedule_table/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/jinzhu/copier"
 )
 
 type MemberHandler interface {
@@ -23,111 +22,129 @@ type MemberHandler interface {
 
 type memberHandler struct {
 	memberRepo repository.MembersRepository
+	calRepo    repository.CalendarRepository
 }
 
 func (mh *memberHandler) GetMembers(c *gin.Context) (*[]dto.ResponseMember, error) {
-	response := &[]dto.ResponseMember{}
 
-	result, err := mh.memberRepo.FindByCalendarId(c.Param("calendarId"))
+	calendarId := c.Param("calendarId")
+	if err := mh.calRepo.CheckExist(calendarId); err != nil {
+		return nil, err
+	}
+
+	result, err := mh.memberRepo.Find(map[string]interface{}{
+		"calendar_id": calendarId,
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	if err := copier.Copy(&response, &result); err != nil {
-		return nil, err
-	}
+	response := util.Convert[[]dto.ResponseMember](&result)
 
 	return response, nil
 }
 
 func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error) {
 
-	response := &dto.ResponseMember{}
+	calendarId := c.Param("calendarId")
+	if err := mh.calRepo.CheckExist(calendarId); err != nil {
+		return nil, err
+	}
 
-	result, err := mh.memberRepo.FindOne(c.Param("memberId"))
+	memberId := c.Param("memberId")
+	if err := mh.memberRepo.CheckExist(memberId); err != nil {
+		return nil, err
+	}
+
+	result, err := mh.memberRepo.FindOne(map[string]interface{}{
+		"id":          memberId,
+		"calendar_id": calendarId,
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	if err := copier.Copy(&response, &result); err != nil {
-		return nil, err
-	}
+	response := util.Convert[dto.ResponseMember](&result)
 
 	return response, nil
 }
 
 func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, error) {
 	var req dto.RequestCreateNewMember
-
-	if err := c.ShouldBind(&req); err != nil {
-		panic(err)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		panic(err)
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	insert := &dao.Members{}
-	copier.Copy(insert, &req)
-	insert.CalendarId = uuid.Must(uuid.Parse(c.Param("calendarId")))
-
-	result, err := mh.memberRepo.Create(insert)
-	if err != nil {
+	calendarId := c.Param("calendarId")
+	if err := mh.calRepo.CheckExist(calendarId); err != nil {
 		return nil, err
 	}
 
-	response := &dto.ResponseMember{}
-	if err := copier.Copy(&response, &result); err != nil {
+	insert := util.Convert[dao.Members](&req)
+	insert.CalendarId = uuid.MustParse(calendarId)
+
+	if err := mh.memberRepo.Create(insert); err != nil {
 		return nil, err
 	}
+
+	response := util.Convert[dto.ResponseMember](&insert)
 
 	return response, nil
 }
 
 func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error) {
-	memberId := c.Param("memberId")
-	calendarId := c.Param("calendarId")
 
 	var req dto.RequestCreateNewMember
 	if err := c.ShouldBind(&req); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	if !mh.memberRepo.IsExits(memberId) {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
-	}
-
-	insertData := &dao.Members{}
-	copier.Copy(insertData, &req)
-	insertData.CalendarId = uuid.Must(uuid.Parse(calendarId))
-
-	result, err := mh.memberRepo.UpdateOne(memberId, insertData)
-	if err != nil {
+	calendarId := c.Param("calendarId")
+	if err := mh.calRepo.CheckExist(calendarId); err != nil {
 		return nil, err
 	}
 
-	response := &dto.ResponseMember{}
-	if err := copier.Copy(&response, &result); err != nil {
+	memberId := c.Param("memberId")
+	if err := mh.memberRepo.CheckExist(memberId); err != nil {
 		return nil, err
 	}
-	return response, nil
+
+	data := util.Convert[dao.Members](&req)
+
+	if result, err := mh.memberRepo.UpdatesAndFindOne(memberId, calendarId, data); err != nil {
+		return nil, err
+	} else {
+		response := util.Convert[dto.ResponseMember](&result)
+		return response, nil
+	}
+
 }
 
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {
-	memberId := c.Param("memberId")
-
-	if !mh.memberRepo.IsExits(memberId) {
-		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("not fount member id in calendar"))
+	calendarId := c.Param("calendarId")
+	if err := mh.calRepo.CheckExist(calendarId); err != nil {
+		return err
 	}
 
-	return mh.memberRepo.DeleteOne(memberId)
+	memberId := c.Param("memberId")
+	if err := mh.memberRepo.CheckExist(memberId); err != nil {
+		return err
+	}
+
+	return mh.memberRepo.DeleteOne(memberId, calendarId)
 }
 
-func NewMemberHandler(memberRepo repository.MembersRepository) MemberHandler {
+func NewMemberHandler(memberRepo repository.MembersRepository, calRepo repository.CalendarRepository) MemberHandler {
 	return &memberHandler{
 		memberRepo: memberRepo,
+		calRepo:    calRepo,
 	}
 }
