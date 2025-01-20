@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/pkg"
@@ -79,9 +78,6 @@ func (leaveHd *leaveHandler) CreateNewLeave(c *gin.Context) (*dao.Leaves, error)
 	}
 	date := time.Date(dateOnly.Year, time.Month(dateOnly.Month), dateOnly.Date, 0, 0, 0, 0, location)
 
-	fmt.Println(dateOnly.Year, time.Month(dateOnly.Month), dateOnly.Date, 0, 0, 0, 0)
-	fmt.Println("date", date)
-
 	insert := &dao.Leaves{
 		CalendarId: uuid.MustParse(calendarId),
 		MemberId:   uuid.MustParse(body.MemberId),
@@ -106,7 +102,6 @@ type DateOnlyFormat struct {
 
 func NewDateOnlyFormat(s string) *DateOnlyFormat {
 	spliced := util.MapStringToInt(strings.Split(s, "-"))
-	fmt.Println(spliced)
 	return &DateOnlyFormat{
 		Date:  spliced[2],
 		Month: spliced[1],
