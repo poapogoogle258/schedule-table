@@ -14,7 +14,7 @@ import (
 )
 
 type MemberHandler interface {
-	GetMembers(c *gin.Context) (*[]dto.ResponseMember, error)
+	GetMembers(c *gin.Context) (*dto.ResponseMembersTable, error)
 	GetMemberId(c *gin.Context) (*dto.ResponseMember, error)
 	CreateNewMember(c *gin.Context) (*dto.ResponseMember, error)
 	EditMember(c *gin.Context) (*dto.ResponseMember, error)
@@ -26,24 +26,61 @@ type memberHandler struct {
 	calRepo    repository.CalendarRepository
 }
 
-func (mh *memberHandler) GetMembers(c *gin.Context) (*[]dto.ResponseMember, error) {
+type QueryStringGetMembers struct {
+	Page  int  `form:"page"`
+	Limit int  `form:"limit"`
+	All   bool `form:"all"`
+}
+
+func (mh *memberHandler) GetMembers(c *gin.Context) (*dto.ResponseMembersTable, error) {
+	var query QueryStringGetMembers
+	if err := c.ShouldBindQuery(&query); err != nil {
+		return nil, err
+	}
 
 	calendarId := c.Param("calendarId")
 	if err := mh.calRepo.CheckExist(calendarId); err != nil {
 		return nil, err
 	}
 
-	result, err := mh.memberRepo.Find(map[string]interface{}{
-		"calendar_id": calendarId,
-	})
+	if query.All {
+		result, err := mh.memberRepo.Find(map[string]interface{}{
+			"calendar_id": calendarId,
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		response := util.Convert[[]dto.ResponseMember](&result)
+
+		return &dto.ResponseMembersTable{
+			Data: response,
+			Pagination: &dto.Pagination{
+				Total: int64(len(*response)),
+			},
+		}, nil
+
+	} else {
+		result, err := mh.memberRepo.FindWithOffsetAndLimit((query.Page-1)*query.Limit, query.Limit, map[string]interface{}{
+			"calendar_id": calendarId,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		response := util.Convert[[]dto.ResponseMember](&result)
+		totalMember := mh.memberRepo.Count(calendarId)
+
+		return &dto.ResponseMembersTable{
+			Data: response,
+			Pagination: &dto.Pagination{
+				CurrentPage: query.Page,
+				Limit:       query.Limit,
+				Total:       totalMember,
+			},
+		}, nil
 	}
 
-	response := util.Convert[[]dto.ResponseMember](&result)
-
-	return response, nil
 }
 
 func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error) {

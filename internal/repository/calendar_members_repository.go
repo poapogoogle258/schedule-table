@@ -15,6 +15,8 @@ var (
 type MembersRepository interface {
 	FindOne(conds ...interface{}) (*dao.Members, error)
 	Find(conds ...interface{}) (*[]dao.Members, error)
+	FindWithOffsetAndLimit(offset int, limit int, conds ...interface{}) (*[]dao.Members, error)
+	Count(calendarId string) int64
 	Create(newMember *dao.Members) error
 	UpdatesAndFindOne(memberId string, calendarId string, insert *dao.Members) (*dao.Members, error)
 	DeleteOne(memberId string, calendarId string) error
@@ -49,9 +51,19 @@ func (memRepo *membersRepository) Find(conds ...interface{}) (*[]dao.Members, er
 	return members, nil
 }
 
+func (memRepo *membersRepository) FindWithOffsetAndLimit(offset int, limit int, conds ...interface{}) (*[]dao.Members, error) {
+	var members *[]dao.Members
+
+	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).Offset(offset).Limit(limit).Find(&members, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
 func (memRepo *membersRepository) Create(newMember *dao.Members) error {
 
-	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).Create(&newMember).Error; err != nil {
+	if err := memRepo.db.Model(&dao.Members{}).Create(&newMember).Error; err != nil {
 		return err
 	}
 
@@ -68,7 +80,7 @@ func (memRepo *membersRepository) UpdatesAndFindOne(memberId string, calendarId 
 		return nil, err
 	}
 
-	if err := memRepo.db.Model(&member).Clauses(clause.Returning{}).Scopes(selectColumnMember).Updates(insert).Error; err != nil {
+	if err := memRepo.db.Model(&member).Clauses(clause.Returning{}).Updates(insert).Error; err != nil {
 		return nil, err
 	}
 
@@ -91,6 +103,15 @@ func (memRepo *membersRepository) CheckExist(memberId string) error {
 
 func (memRepo *membersRepository) DeleteOne(memberId string, calendarId string) error {
 	return memRepo.db.Delete(&dao.Members{}, "id = ? AND calendar_id = ?", memberId, calendarId).Error
+}
+
+func (memRepo *membersRepository) Count(calendarId string) int64 {
+	var count int64
+	if err := memRepo.db.Model(&dao.Members{}).Where("calendar_id = ?", calendarId).Count(&count).Error; err != nil {
+		panic(err)
+	}
+
+	return count
 }
 
 func NewMemberRepository(db *gorm.DB) MembersRepository {

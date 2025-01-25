@@ -108,3 +108,14 @@ func (responseProfile *ResponseProfile) Calendar(cal *dao.Calendars) {
 		responseProfile.CalendarId = nil
 	}
 }
+
+type Pagination struct {
+	Total       int64 `json:"total_records"`
+	CurrentPage int   `json:"current_page"`
+	Limit       int   `json:"limit"`
+}
+
+type ResponseMembersTable struct {
+	Data       *[]ResponseMember `json:"data"`
+	Pagination *Pagination       `json:"pagination"`
+}
