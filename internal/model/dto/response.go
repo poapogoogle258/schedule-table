@@ -50,6 +50,7 @@ type ResponseSchedule struct {
 	Hr_end           string           `json:"hr_end"`
 	Tzid             string           `json:"tzid"`
 	BreakTime        uint32           `json:"breaktime"`
+	UseNumberPeople  int8             `json:"use_number_people"`
 	Recurrence       Recurrence       `json:"recurrence"`
 	Members          []ResponseMember `json:"members"`
 }
@@ -81,14 +82,23 @@ func (resSchedule *ResponseSchedule) Recurrence_bymonth(s string) {
 	resSchedule.Recurrence.Bymonth = util.MapStringToInt(strings.Split(s, ","))
 }
 
+type ResponseTaskDescription struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	ImageURL    string `json:"imageURL"`
+	Priority    int8   `json:"priority"`
+}
+
 type ResponseTask struct {
-	Id         string        `json:"id"`
-	CalendarId string        `json:"calendar_id"`
-	ScheduleId string        `json:"schedule_id"`
-	Start      time.Time     `json:"start"`
-	End        time.Time     `json:"end"`
-	Status     int8          `json:"status"`
-	Person     RequestMember `json:"person"`
+	Id          string                  `json:"id"`
+	CalendarId  string                  `json:"calendar_id"`
+	ScheduleId  string                  `json:"schedule_id"`
+	Start       time.Time               `json:"start"`
+	End         time.Time               `json:"end"`
+	Status      int8                    `json:"status"`
+	Person      RequestMember           `json:"person"`
+	Description ResponseTaskDescription `json:"description"`
 }
 
 type ResponseProfile struct {

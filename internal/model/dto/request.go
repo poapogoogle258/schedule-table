@@ -13,6 +13,7 @@ import (
 )
 
 type RequestMember struct {
+	Id          string `json:"id"`
 	ImageURL    string `json:"imageURL"`
 	Name        string `json:"name"`
 	Nickname    string `json:"nickname"`
@@ -68,6 +69,7 @@ type RequestSchedule struct {
 	Hr_end           string           `json:"hr_end"`
 	Tzid             string           `json:"tzid"`
 	BreakTime        uint32           `json:"breaktime"`
+	UseNumberPeople  int8             `json:"use_number_people"`
 	Recurrence       Recurrence       `json:"recurrence"`
 	Members          []ResponseMember `json:"members"`
 }

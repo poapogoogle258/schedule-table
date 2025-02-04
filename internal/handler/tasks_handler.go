@@ -66,6 +66,12 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 				manager := taskHandler.ManagerService.NewManagerSchedule(&schedule)
 				manager.Tasks = taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
 
+				// DO TO : Refix
+				for c := 0; c < len(*manager.Tasks); c++ {
+					(*manager.Tasks)[c].Description = &schedule
+				}
+				// ----------------------------------
+
 				managers[manager.Id] = manager
 				calendarTasks = append(calendarTasks, (*manager.Tasks)...)
 			} else if loopMasterId == 1 && schedule.MasterScheduleId != nil {
