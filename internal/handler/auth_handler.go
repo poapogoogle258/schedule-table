@@ -30,7 +30,7 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (s *AuthHandlerImpl) Login(c *gin.Context) {
+func (handler *AuthHandlerImpl) Login(c *gin.Context) {
 
 	var request loginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -40,21 +40,24 @@ func (s *AuthHandlerImpl) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := s.userRepo.FindOneByEmail(request.Email)
+	user, err := handler.userRepo.FindOneByEmail(request.Email)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{})
 	}
 
 	if util.VerifyPassword(request.Password, user.Password) {
-		token := s.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
-		if err := s.userRepo.UpdateOne(user.Id.String(), "token", token); err != nil {
+		token := handler.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
+		if err := handler.userRepo.UpdateOne(user.Id.String(), "token", token); err != nil {
 			panic(err)
 		}
 
-		decode, _ := s.jwtService.ValidateToken(token)
+		decode, _ := handler.jwtService.ValidateToken(token)
+		profile, _ := handler.userRepo.Profile(user.Id.String())
+
 		c.JSON(http.StatusOK, gin.H{
-			"token": token,
-			"exp":   decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
+			"profile": util.Convert[dto.ResponseProfile](&profile),
+			"token":   token,
+			"exp":     decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
 		})
 	} else {
 		c.JSON(http.StatusForbidden, gin.H{})
