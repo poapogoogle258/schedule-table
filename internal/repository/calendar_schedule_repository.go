@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"schedule_table/internal/model/dao"
 
 	"github.com/google/uuid"
@@ -43,6 +44,9 @@ func (scheduleRepo *scheduleRepository) GetScheduleCalendarId(calendarId string,
 }
 
 func (scheduleRepo *scheduleRepository) CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error) {
+
+	fmt.Println("insert-0", insert)
+
 	if err := scheduleRepo.db.Create(&insert).Error; err != nil {
 		return nil, err
 	}

@@ -64,7 +64,7 @@ type RequestSchedule struct {
 	ImageURL         string           `json:"imageURL"`
 	Priority         int8             `json:"priority"`
 	Start            time.Time        `json:"start"`
-	End              time.Time        `json:"end"`
+	End              *time.Time       `json:"end"`
 	Hr_start         string           `json:"hr_start"`
 	Hr_end           string           `json:"hr_end"`
 	Tzid             string           `json:"tzid"`

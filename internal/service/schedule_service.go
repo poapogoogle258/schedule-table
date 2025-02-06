@@ -25,7 +25,7 @@ type Schedule struct {
 	CalendarId          uuid.UUID
 	MasterScheduleId    *uuid.UUID
 	Priority            int8
-	DateStart           *time.Time
+	DateStart           time.Time
 	DateEnd             *time.Time
 	TimeStart           hrTime
 	TimeEnd             hrTime
@@ -64,8 +64,8 @@ func (schedule *Schedule) GenerateTasks(start time.Time, end time.Time) *[]dao.T
 		option.Byweekday = schedule.RecurrenceByWeekday
 	}
 
-	if schedule.DateStart != nil && schedule.DateStart.Before(start) {
-		option.Dtstart = *schedule.DateStart
+	if schedule.DateStart.Before(start) {
+		option.Dtstart = schedule.DateStart
 	} else {
 		option.Dtstart = time.Date(start.Year(), start.Month(), start.Day(), schedule.TimeStart.H, schedule.TimeStart.M, 0, 0, schedule.Tzid)
 	}
