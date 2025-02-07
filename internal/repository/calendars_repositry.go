@@ -85,9 +85,10 @@ func (calRepo *calendarRepository) FindOneWithAssociation(calendarId string, sta
 	calendar := &dao.Calendars{}
 
 	if err := calRepo.db.
-		Preload("Members").
-		Preload("Leaves", func(db *gorm.DB) *gorm.DB {
-			return db.Where("leaves.date BETWEEN ? AND ?", start, end).Order("leaves.date ASC")
+		Preload("Members", func(db *gorm.DB) *gorm.DB {
+			return db.Preload("Leaves", func(db *gorm.DB) *gorm.DB {
+				return db.Where("leaves.date BETWEEN ? AND ?", start, end).Order("leaves.date ASC")
+			})
 		}).
 		Preload("Schedules.Responsibles", func(db *gorm.DB) *gorm.DB {
 			return db.Preload("Person").Order("responsibles.queue ASC")

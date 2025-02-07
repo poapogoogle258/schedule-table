@@ -3,18 +3,18 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"schedule_table/internal/lib"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
-	"schedule_table/internal/service"
 	"schedule_table/util"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/jinzhu/copier"
 )
 
 type TasksHandler interface {
@@ -23,10 +23,8 @@ type TasksHandler interface {
 }
 
 type tasksHandler struct {
-	CalRepo        repository.CalendarRepository
-	ScheService    service.IScheduleService
-	ManagerService service.IManagerService
-	TaskRepo       repository.ITaskRepository
+	CalRepo  repository.CalendarRepository
+	TaskRepo repository.ITaskRepository
 }
 
 type queryStringGetTasks struct {
@@ -55,94 +53,117 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 		return nil, errFindCalendar
 	}
 
-	managers := make(map[uuid.UUID]*service.Manager)
-	calendarTasks := make([]dao.Tasks, 0)
+	workers := make([]lib.IWorker, 0)
+	workerQueue := make(map[uuid.UUID]lib.IWorkerQueue)
+	tasks := make([]*dao.Tasks, 0)
+	tasksDifference := make([]*dao.Tasks, 0)
 
-	for loopMasterId := 0; loopMasterId < 2; loopMasterId++ {
-		for i := 0; i < len(*calendar.Schedules); i++ {
+	// create worker
+	for _, member := range *calendar.Members {
+		workers = append(workers, lib.NewWorkerMember(&member))
+	}
+
+	// create tasks
+	var wg sync.WaitGroup
+	for i := 0; i < len(*calendar.Schedules); i++ {
+		wg.Add(1)
+		go func() {
 			schedule := (*calendar.Schedules)[i]
 
-			if loopMasterId == 0 && schedule.MasterScheduleId == nil {
-				manager := taskHandler.ManagerService.NewManagerSchedule(&schedule)
-				manager.Tasks = taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
-
-				// DO TO : Refix
-				for c := 0; c < len(*manager.Tasks); c++ {
-					(*manager.Tasks)[c].Description = &schedule
-				}
-				// ----------------------------------
-
-				managers[manager.Id] = manager
-				calendarTasks = append(calendarTasks, (*manager.Tasks)...)
-			} else if loopMasterId == 1 && schedule.MasterScheduleId != nil {
-				masterId := *schedule.MasterScheduleId
-				if _, hasManager := managers[masterId]; !hasManager {
-					panic(errors.New("DO TO: load master queue to childe"))
-				}
-
-				manager := taskHandler.ManagerService.NewManagerScheduleWithQueue(&schedule, managers[masterId].Queue)
-				manager.Tasks = taskHandler.ScheService.NewSchedule(&schedule).GenerateTasks(start, end)
-
-				managers[manager.Id] = manager
-				calendarTasks = append(calendarTasks, (*manager.Tasks)...)
+			if schedule.MasterScheduleId == nil {
+				workerQueue[schedule.Id] = lib.NewWorkerQueue(selectWorkersResponsible(&workers, schedule.Responsibles))
 			}
-		}
+			tasksGenerated := lib.CreateRecurrenceTasks(&schedule, start, end)
+			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.Find("schedule_id = ? AND start BETWEEN ? AND ?", schedule.Id, start, end)
+			if errQueryTaskCalendar != nil {
+				panic(errQueryTaskCalendar)
+			}
+
+			// marge taskGenerated and taskCalendar to { Marge, Difference }
+		TaskCalendarLoop:
+			for _, taskCalendar := range *tasksCalendar {
+				for j, taskGenerated := range tasksGenerated {
+					if taskGenerated.Start.Equal(taskCalendar.Start) {
+						tasksGenerated[j] = &taskCalendar
+						continue TaskCalendarLoop
+					}
+				}
+
+				tasksDifference = append(tasksDifference, &taskCalendar)
+			}
+
+			tasks = append(tasks, tasksGenerated...)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	// handler tasksDifference
+	for _, task := range tasksDifference {
+		go taskHandler.TaskRepo.DeleteOne(task.Id)
 	}
 
-	slices.SortFunc(calendarTasks, softByDateTimeAndPriority)
-
-	taskReserved, _ := taskHandler.TaskRepo.Find("(start BETWEEN @start AND @end) AND ('end' BETWEEN @start AND @end) AND reserved = true", map[string]interface{}{
-		"start": start.UTC().Format(time.RFC3339),
-		"end":   end.UTC().Format(time.RFC3339),
-	})
-	if taskReserved != nil {
-		for i := 0; i < len(*taskReserved); i++ {
-			for j := 0; j < len(calendarTasks); j++ {
-				if checkTaskIsBooking(&(*taskReserved)[i], &calendarTasks[j]) {
-					calendarTasks[j] = (*taskReserved)[i]
+	// order queue worker
+	for masterId := range workerQueue {
+		wg.Add(1)
+		go func() {
+			schedulesId := make([]uuid.UUID, 0)
+			for _, schedule := range *calendar.Schedules {
+				if schedule.Id == masterId || (schedule.MasterScheduleId != nil && *schedule.MasterScheduleId == masterId) {
+					schedulesId = append(schedulesId, schedule.Id)
 				}
 			}
-		}
-	}
 
-	for i := 0; i < len(calendarTasks); i++ {
-		task := &calendarTasks[i]
-		for n := 0; ; n++ {
-			if err := managers[task.ScheduleId].Queue.Next(n).AddTask(task, managers[task.ScheduleId].RestTime); err == nil {
-				managers[task.ScheduleId].Queue.Select(n)
-				managers[task.ScheduleId].Count.Add(task.MemberId)
-				break
-			} else if errors.Is(err, service.ErrorSkipAllQueue) {
-				// skip is task
-				break
-			} else {
-				managers[task.ScheduleId].Queue.Skip()
-				// TO DO: Handler Force
+			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.FindOrderLimit("start DESC", workerQueue[masterId].Size(), "schedule_id IN ? AND start BETWEEN ? AND ?", schedulesId, start, end)
+			if errQueryTaskCalendar != nil {
+				panic(errQueryTaskCalendar)
 			}
+
+			workerQueue[masterId].OrderQueue(tasksCalendar)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	// sort tasks
+	slices.SortFunc(tasks, softByDateTimeAndPriority)
+
+	// match tasks
+	for i := 0; i < len(tasks); i++ {
+		var selectWorkerQueueId uuid.UUID
+		if tasks[i].Description.MasterScheduleId == nil {
+			selectWorkerQueueId = tasks[i].Description.Id
+		} else {
+			selectWorkerQueueId = *tasks[i].Description.MasterScheduleId
 		}
+
+		if _, checkQueue := workerQueue[selectWorkerQueueId]; !checkQueue {
+			return nil, errors.New("not have workerQueue")
+		}
+
+		workerQueue[selectWorkerQueueId].Match(tasks[i])
 	}
 
-	response := &[]dto.ResponseTask{}
-	if err := copier.Copy(&response, &calendarTasks); err != nil {
-		return nil, err
-	}
-
-	return response, nil
+	return util.Convert[[]dto.ResponseTask](&tasks), nil
 }
 
-func checkTaskIsBooking(task, generateTask *dao.Tasks) bool {
-	if generateTask.Reserved {
-		return false
+func selectWorkersResponsible(workers *[]lib.IWorker, responsibly *[]dao.Responsible) []lib.IWorker {
+	selectWorkers := make([]lib.IWorker, 0)
+
+	for _, responsible := range *responsibly {
+		for i := 0; i < len(*workers); i++ {
+			if responsible.MemberId == (*workers)[i].GetId() {
+				selectWorkers = append(selectWorkers, (*workers)[i])
+				break
+			}
+		}
 	}
 
-	if task.ScheduleId == generateTask.ScheduleId && task.Start.Equal(generateTask.Start) && task.End.Equal(generateTask.End) {
-		return true
-	} else {
-		return false
-	}
+	return selectWorkers
+
 }
 
-func softByDateTimeAndPriority(a, b dao.Tasks) int {
+func softByDateTimeAndPriority(a, b *dao.Tasks) int {
 	if c := a.Start.Compare(b.Start); c == 0 {
 		if a.Priority > b.Priority {
 			return 1
@@ -188,11 +209,9 @@ func (handler *tasksHandler) ReserveMember(c *gin.Context) (*dao.Tasks, error) {
 	return task, nil
 }
 
-func NewTasksHandler(calRepo repository.CalendarRepository, scheService service.IScheduleService, managerService service.IManagerService, taskRepo repository.ITaskRepository) TasksHandler {
+func NewTasksHandler(calRepo repository.CalendarRepository, taskRepo repository.ITaskRepository) TasksHandler {
 	return &tasksHandler{
-		CalRepo:        calRepo,
-		ScheService:    scheService,
-		ManagerService: managerService,
-		TaskRepo:       taskRepo,
+		CalRepo:  calRepo,
+		TaskRepo: taskRepo,
 	}
 }

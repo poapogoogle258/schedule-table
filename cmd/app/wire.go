@@ -37,8 +37,6 @@ var (
 
 	taskSet = wire.NewSet(
 		handler.NewTasksHandler,
-		service.NewScheduleService,
-		service.NewManagerService,
 		repository.NewTaskRepository,
 	)
 

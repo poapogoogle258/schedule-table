@@ -3,13 +3,16 @@ package repository
 import (
 	"schedule_table/internal/model/dao"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type ITaskRepository interface {
 	Find(conds ...interface{}) (*[]dao.Tasks, error)
+	FindOrderLimit(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error)
 	UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error)
+	DeleteOne(taskId uuid.UUID) error
 }
 
 type TaskRepository struct {
@@ -25,6 +28,15 @@ func (taskRepo *TaskRepository) Find(conds ...interface{}) (*[]dao.Tasks, error)
 	return tasks, nil
 }
 
+func (taskRepo *TaskRepository) FindOrderLimit(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error) {
+	var tasks *[]dao.Tasks
+	if err := taskRepo.db.Limit(limit).Order(order).Find(&tasks, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
 func (repo *TaskRepository) UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error) {
 	task := &dao.Tasks{}
 
@@ -32,6 +44,19 @@ func (repo *TaskRepository) UpdatesAndFind(taskId string, value interface{}) (*d
 		return nil, err
 	}
 	return task, nil
+}
+
+func (taskRepo *TaskRepository) Delete(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error) {
+	var tasks *[]dao.Tasks
+	if err := taskRepo.db.Limit(limit).Order(order).Find(&tasks, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (taskRepo *TaskRepository) DeleteOne(taskId uuid.UUID) error {
+	return taskRepo.db.Delete(&dao.Tasks{}, "id = ?", taskId).Error
 }
 
 func NewTaskRepository(db *gorm.DB) ITaskRepository {
