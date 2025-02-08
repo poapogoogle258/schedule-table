@@ -2,6 +2,7 @@ package lib
 
 import (
 	"errors"
+	"fmt"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/model/dao"
 	"schedule_table/util"
@@ -9,9 +10,10 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	rrule "github.com/teambition/rrule-go"
 
 	"time"
+
+	rrule "github.com/teambition/rrule-go"
 )
 
 func CreateRecurrenceTasks(schedule *dao.Schedules, start time.Time, end time.Time) []*dao.Tasks {
@@ -67,17 +69,19 @@ func CreateRecurrenceTasks(schedule *dao.Schedules, start time.Time, end time.Ti
 			tasksStart := recurrenceSchedule[i]
 			tasksEnd := recurrenceSchedule[i].Add(duration)
 			resttime := tasksEnd.Add(time.Duration(schedule.BreakTime) * time.Minute)
+			recurrenceId := fmt.Sprint(schedule.Id.String(), "-", tasksStart.Format(time.DateOnly), "#", number)
 
 			tasks = append(tasks, &dao.Tasks{
-				Id:          uuid.New(),
-				ScheduleId:  schedule.Id,
-				CalendarId:  schedule.CalendarId,
-				Status:      constant.TaskStatus_Created,
-				Priority:    schedule.Priority,
-				Start:       tasksStart,
-				End:         tasksEnd,
-				RestTime:    resttime,
-				Description: *schedule,
+				Id:           uuid.New(),
+				ScheduleId:   schedule.Id,
+				CalendarId:   schedule.CalendarId,
+				RecurrenceId: recurrenceId,
+				Status:       constant.TaskStatus_Created,
+				Priority:     schedule.Priority,
+				Start:        tasksStart,
+				End:          tasksEnd,
+				RestTime:     resttime,
+				Description:  *schedule,
 			})
 		}
 	}

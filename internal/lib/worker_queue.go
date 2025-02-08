@@ -4,6 +4,7 @@ import (
 	"errors"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/model/dao"
+	"slices"
 )
 
 type IWorkerQueue interface {
@@ -60,10 +61,14 @@ func (workerQueue *WorkerQueue) Match(task *dao.Tasks) error {
 
 }
 
-// tasks must softed date Desc
 func (workerQueue *WorkerQueue) OrderQueue(tasks *[]dao.Tasks) error {
+
+	_task := *tasks
+
+	slices.SortFunc(_task, sortStartDate)
 	items := workerQueue.Main.All()
-	for _, task := range *tasks {
+
+	for _, task := range _task {
 		for i, item := range items {
 			if item.GetId() == *task.MemberId {
 				items = append(items[:i], items[i+1:]...)
@@ -83,5 +88,15 @@ func (WorkerQueue *WorkerQueue) Size() int {
 func NewWorkerQueue(workers []IWorker) IWorkerQueue {
 	return &WorkerQueue{
 		Main: NewQueue(workers),
+	}
+}
+
+func sortStartDate(a, b dao.Tasks) int {
+	if a.Start.After(b.Start) {
+		return 1
+	} else if a.Start.Before(b.Start) {
+		return -1
+	} else {
+		return 0
 	}
 }

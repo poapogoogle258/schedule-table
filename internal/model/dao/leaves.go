@@ -21,7 +21,9 @@ type Leaves struct {
 }
 
 func (leave *Leaves) BeforeCreate(tx *gorm.DB) (err error) {
-	leave.Id = uuid.New()
+	if leave.Id == uuid.Nil {
+		leave.Id = uuid.New()
+	}
 
 	return
 }

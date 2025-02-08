@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"schedule_table/internal/constant"
 	"schedule_table/internal/lib"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
@@ -114,7 +115,7 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 				}
 			}
 
-			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.FindOrderLimit("start DESC", workerQueue[masterId].Size(), "schedule_id IN ? AND start BETWEEN ? AND ?", schedulesId, start, end)
+			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.FindOrderLimit("start DESC", workerQueue[masterId].Size(), "schedule_id IN ? AND start < ? AND status != ?", schedulesId, start, constant.TaskStatus_Canceled)
 			if errQueryTaskCalendar != nil {
 				panic(errQueryTaskCalendar)
 			}
@@ -143,6 +144,8 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 
 		workerQueue[selectWorkerQueueId].Match(tasks[i])
 	}
+
+	go taskHandler.TaskRepo.CreateTasks(tasks)
 
 	return util.Convert[[]dto.ResponseTask](&tasks), nil
 }

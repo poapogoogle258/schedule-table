@@ -19,7 +19,9 @@ type Calendars struct {
 }
 
 func (cal *Calendars) BeforeCreate(tx *gorm.DB) (err error) {
-	cal.Id = uuid.New()
+	if cal.Id == uuid.Nil {
+		cal.Id = uuid.New()
+	}
 
 	return
 }

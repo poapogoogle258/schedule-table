@@ -22,7 +22,9 @@ type Members struct {
 }
 
 func (mem *Members) BeforeCreate(tx *gorm.DB) (err error) {
-	mem.Id = uuid.New()
+	if mem.Id == uuid.Nil {
+		mem.Id = uuid.New()
+	}
 
 	return
 }

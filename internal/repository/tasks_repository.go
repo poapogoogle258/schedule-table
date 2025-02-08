@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"schedule_table/internal/model/dao"
 
 	"github.com/google/uuid"
@@ -12,11 +13,25 @@ type ITaskRepository interface {
 	Find(conds ...interface{}) (*[]dao.Tasks, error)
 	FindOrderLimit(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error)
 	UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error)
+	CreateTasks(insert []*dao.Tasks) error
 	DeleteOne(taskId uuid.UUID) error
 }
 
 type TaskRepository struct {
 	db *gorm.DB
+}
+
+func (taskRepo *TaskRepository) CreateTasks(insert []*dao.Tasks) error {
+
+	fmt.Println("MemberId[0]", insert[0].MemberId)
+	fmt.Println("Person[0]", insert[0].Person.Id)
+	fmt.Println("Insert[0]", insert[0])
+
+	if err := taskRepo.db.Model(&dao.Tasks{}).Omit("Description").Create(insert[0]).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (taskRepo *TaskRepository) Find(conds ...interface{}) (*[]dao.Tasks, error) {

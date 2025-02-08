@@ -19,7 +19,10 @@ type Users struct {
 }
 
 func (u *Users) BeforeCreate(tx *gorm.DB) (err error) {
-	u.Id = uuid.New()
+
+	if u.Id == uuid.Nil {
+		u.Id = uuid.New()
+	}
 
 	return
 }
