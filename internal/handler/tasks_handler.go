@@ -80,9 +80,7 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 				panic(errQueryTaskCalendar)
 			}
 
-			//
-
-			// marge taskGenerated and taskCalendar to { Marge, Difference }
+			// marge taskGenerated and taskCalendar
 		TaskCalendarLoop:
 			for _, taskCalendar := range *tasksCalendar {
 
@@ -93,8 +91,9 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 					}
 				}
 
+				// check marge
 				for j, taskGenerated := range tasksGenerated {
-					if taskGenerated.Start.Equal(taskCalendar.Start) {
+					if taskGenerated.RecurrenceId == taskCalendar.RecurrenceId {
 						tasksGenerated[j] = &taskCalendar
 						continue TaskCalendarLoop
 					}
