@@ -29,7 +29,7 @@ func Injector() *router.Handlers {
 	scheduleRepository := repository.NewScheduleRepository(db)
 	scheduleHandler := handler.NewScheduleHandler(scheduleRepository)
 	iTaskRepository := repository.NewTaskRepository(db)
-	tasksHandler := handler.NewTasksHandler(calendarRepository, iTaskRepository)
+	tasksHandler := handler.NewTasksHandler(calendarRepository, iTaskRepository, scheduleRepository, membersRepository)
 	leaveRepository := repository.NewLeaveRepository(db)
 	leaveHandler := handler.NewLeaveHandler(calendarRepository, leaveRepository)
 	handlers := &router.Handlers{

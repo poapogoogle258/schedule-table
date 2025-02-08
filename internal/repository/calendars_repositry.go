@@ -21,10 +21,49 @@ type CalendarRepository interface {
 	FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error)
 	CheckExist(calendarId string) error
 	FindOneWithAssociation(calendarId string, start time.Time, end time.Time) (*dao.Calendars, error)
+	UpdateLastTimeGenerated(calendarId string) error
+	CheckRecurrenceChanged(calendarId string) bool
+	IsExists(calendarId string) bool
 }
 
 type calendarRepository struct {
 	db *gorm.DB
+}
+
+func (calRepo *calendarRepository) IsExists(calendarId string) bool {
+	var count int64
+	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Limit(1).Count(&count).Error; err != nil {
+		return false
+	}
+
+	return count > 0
+}
+
+func (calRepo *calendarRepository) CheckRecurrenceChanged(calendarId string) bool {
+
+	calendar := &dao.Calendars{}
+	if err := calRepo.db.Select("id", "updated_recurrence", "updated_generate_tasks").First(&calendar, "id = ?", calendarId).Error; err != nil {
+		return false
+	}
+
+	if calendar.LastTimeUpdatedGenerateTasks == nil || calendar.LastTimeUpdatedGenerateTasks.Before(calendar.LastTimeUpdatedRecurrence) {
+		return true
+	}
+
+	return false
+
+}
+
+func (calRepo *calendarRepository) UpdateLastTimeGenerated(calendarId string) error {
+	if err := calRepo.CheckExist(calendarId); err != nil {
+		return err
+	}
+
+	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Update("updated_generate_tasks", time.Now()).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (calRepo *calendarRepository) FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error) {

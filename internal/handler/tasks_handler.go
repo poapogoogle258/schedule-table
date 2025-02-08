@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"schedule_table/internal/constant"
 	"schedule_table/internal/lib"
@@ -20,18 +21,19 @@ import (
 
 type TasksHandler interface {
 	GetTasks(c *gin.Context) (*[]dto.ResponseTask, error)
-	ReserveMember(c *gin.Context) (*dao.Tasks, error)
+	EditTask(c *gin.Context) (*dto.ResponseTask, error)
 }
 
 type tasksHandler struct {
-	CalRepo  repository.CalendarRepository
-	TaskRepo repository.ITaskRepository
+	CalRepo      repository.CalendarRepository
+	TaskRepo     repository.ITaskRepository
+	ScheduleRepo repository.ScheduleRepository
+	MemberRepo   repository.MembersRepository
 }
 
 type queryStringGetTasks struct {
-	Start  string `form:"start" binding:"required"`
-	End    string `form:"end" binding:"required"`
-	Action string `form:"action" binding:"required"`
+	Start string `form:"start" binding:"required"`
+	End   string `form:"end" binding:"required"`
 }
 
 func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, error) {
@@ -49,6 +51,16 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 	start := util.Must(time.Parse(time.RFC3339, query.Start))
 	end := util.Must(time.Parse(time.RFC3339, query.End))
 
+	if !taskHandler.CalRepo.CheckRecurrenceChanged(calendarId) {
+		if tasks, err := taskHandler.TaskRepo.FindWithAssociation("start BETWEEN ? AND ?", start, end); err != nil {
+			return nil, err
+		} else {
+			return util.Convert[[]dto.ResponseTask](&tasks), nil
+		}
+	}
+
+	// ------------------ generate new task --------------------------------
+
 	calendar, errFindCalendar := taskHandler.CalRepo.FindOneWithAssociation(calendarId, start, end)
 	if errFindCalendar != nil {
 		return nil, errFindCalendar
@@ -58,6 +70,8 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 	workerQueue := make(map[uuid.UUID]lib.IWorkerQueue)
 	tasks := make([]*dao.Tasks, 0)
 	tasksDifference := make([]*dao.Tasks, 0)
+
+	var workerQueueMutex sync.Mutex
 
 	// create worker
 	for _, member := range *calendar.Members {
@@ -72,10 +86,13 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 			schedule := (*calendar.Schedules)[i]
 
 			if schedule.MasterScheduleId == nil {
+				// workerQueue[schedule.Id] = lib.NewWorkerQueue(selectWorkersResponsible(workers, *schedule.Responsibles))
+				workerQueueMutex.Lock()
 				workerQueue[schedule.Id] = lib.NewWorkerQueue(selectWorkersResponsible(workers, *schedule.Responsibles))
+				workerQueueMutex.Unlock()
 			}
 			tasksGenerated := lib.CreateRecurrenceTasks(&schedule, start, end)
-			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.Find("schedule_id = ? AND start BETWEEN ? AND ?", schedule.Id, start, end)
+			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.FindWithAssociation("schedule_id = ? AND start BETWEEN ? AND ?", schedule.Id, start, end)
 			if errQueryTaskCalendar != nil {
 				panic(errQueryTaskCalendar)
 			}
@@ -147,6 +164,11 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 			selectWorkerQueueId = *tasks[i].Description.MasterScheduleId
 		}
 
+		if selectWorkerQueueId == uuid.Nil {
+			fmt.Println("tasks", tasks[i])
+			return nil, errors.New("selectWorkerQueueId is nil")
+		}
+
 		if _, checkQueue := workerQueue[selectWorkerQueueId]; !checkQueue {
 			return nil, errors.New("not have workerQueue")
 		}
@@ -154,7 +176,8 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 		workerQueue[selectWorkerQueueId].Match(tasks[i])
 	}
 
-	go taskHandler.TaskRepo.CreateTasks(tasks)
+	taskHandler.TaskRepo.CreateTasks(tasks)
+	taskHandler.CalRepo.UpdateLastTimeGenerated(calendarId)
 
 	return util.Convert[[]dto.ResponseTask](&tasks), nil
 }
@@ -184,43 +207,64 @@ func softByDateTimeAndPriority(a, b *dao.Tasks) int {
 	}
 }
 
-type ReserveMemberQueryString struct {
-	MemberId string `form:"member_id"`
-	Reserved string `form:"reserved"`
+type ReserveMemberBody struct {
+	MemberId string    `json:"member_id" binding:"required"`
+	Start    time.Time `json:"start" binding:"required"`
+	End      time.Time `json:"end" binding:"required"`
+	Status   int8      `json:"status" binding:"required"`
 }
 
-func (handler *tasksHandler) ReserveMember(c *gin.Context) (*dao.Tasks, error) {
+var (
+	ErrStartDateTimeIsAfterEndDateTime = errors.New("start datetime is after end datetime")
+)
+
+func (handler *tasksHandler) EditTask(c *gin.Context) (*dto.ResponseTask, error) {
+
+	calendarId := c.Param("calendarId")
+	if !handler.CalRepo.IsExists(calendarId) {
+		return nil, pkg.NewErrorWithStatusCode(404, repository.ErrCalendarNotFount)
+	}
+
 	taskId := c.Param("taskId")
-	memberId := c.Param("memberId")
-
-	var query ReserveMemberQueryString
-	if err := c.ShouldBindQuery(&query); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request Must have 'member_id' and 'reserved' in query string"))
+	if !handler.TaskRepo.IsExists(taskId) {
+		return nil, pkg.NewErrorWithStatusCode(404, repository.ErrTaskNotExists)
 	}
 
-	insert := map[string]interface{}{}
-	if query.Reserved == "true" {
-		insert["member_id"] = memberId
-		insert["reserved"] = true
-
-	} else if query.Reserved == "false" {
-		insert["reserved"] = false
-	} else {
-		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request in query field 'reserved' value must be 'true' or 'false'"))
+	body := &ReserveMemberBody{}
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(400, err)
 	}
 
-	task, errUpdate := handler.TaskRepo.UpdatesAndFind(taskId, insert)
-
-	if errUpdate != nil {
-		return nil, errUpdate
+	if body.Start.After(body.End) {
+		return nil, pkg.NewErrorWithStatusCode(400, ErrStartDateTimeIsAfterEndDateTime)
 	}
 
-	return task, nil
+	if _, err := constant.NewTaskStatus(body.Status); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(400, err)
+	}
+
+	memberId := uuid.MustParse(body.MemberId)
+	data := map[string]interface{}{
+		"member_id": &memberId,
+		"start":     body.Start,
+		"end":       body.End,
+		"status":    constant.TaskStatus(body.Status),
+	}
+
+	task, errUpdateTask := handler.TaskRepo.UpdatesAndFind(taskId, data)
+	if errUpdateTask != nil {
+		return nil, pkg.NewErrorWithStatusCode(500, errUpdateTask)
+	}
+
+	return util.Convert[dto.ResponseTask](&task), nil
 }
 
-func NewTasksHandler(calRepo repository.CalendarRepository, taskRepo repository.ITaskRepository) TasksHandler {
+func NewTasksHandler(calRepo repository.CalendarRepository, taskRepo repository.ITaskRepository, scheduleRepo repository.ScheduleRepository, memberRepo repository.MembersRepository) TasksHandler {
+
 	return &tasksHandler{
-		CalRepo:  calRepo,
-		TaskRepo: taskRepo,
+		CalRepo:      calRepo,
+		TaskRepo:     taskRepo,
+		ScheduleRepo: scheduleRepo,
+		MemberRepo:   memberRepo,
 	}
 }

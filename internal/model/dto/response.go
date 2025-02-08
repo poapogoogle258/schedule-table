@@ -76,10 +76,19 @@ func (resSchedule *ResponseSchedule) Recurrence_interval(s int32) {
 	resSchedule.Recurrence.Interval = s
 }
 func (resSchedule *ResponseSchedule) Recurrence_byweekday(s string) {
-	resSchedule.Recurrence.Byweekday = util.MapStringToInt(strings.Split(s, ","))
+	if s == "" {
+		resSchedule.Recurrence.Byweekday = []int{}
+	} else {
+		resSchedule.Recurrence.Byweekday = util.MapStringToInt(strings.Split(s, ","))
+	}
 }
 func (resSchedule *ResponseSchedule) Recurrence_bymonth(s string) {
-	resSchedule.Recurrence.Bymonth = util.MapStringToInt(strings.Split(s, ","))
+	if s == "" {
+		resSchedule.Recurrence.Bymonth = []int{}
+	} else {
+		resSchedule.Recurrence.Bymonth = util.MapStringToInt(strings.Split(s, ","))
+
+	}
 }
 
 type ResponseTaskDescription struct {

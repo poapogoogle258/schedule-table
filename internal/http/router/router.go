@@ -73,7 +73,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 
 		// task
 		calendar.GET("/:calendarId/tasks", pkg.BuildGetController(handlers.Task.GetTasks))
-		calendar.GET("/:calendarId/tasks/:taskId", pkg.BuildGetController(handlers.Task.ReserveMember))
+		calendar.PATCH("/:calendarId/tasks/:taskId", pkg.BuildPatchController(handlers.Task.EditTask))
 
 		// leave
 		calendar.GET("/:calendarId/leaves", pkg.BuildGetController(handlers.Leave.GetLeave))

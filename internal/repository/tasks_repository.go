@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"schedule_table/internal/model/dao"
 
 	"github.com/google/uuid"
@@ -10,19 +11,55 @@ import (
 
 type ITaskRepository interface {
 	Find(conds ...interface{}) (*[]dao.Tasks, error)
+	First(conds ...interface{}) (*dao.Tasks, error)
 	FindOrderLimit(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error)
 	UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error)
 	CreateTasks(insert []*dao.Tasks) error
 	DeleteOne(taskId uuid.UUID) error
+	FindWithAssociation(conds ...interface{}) (*[]dao.Tasks, error)
+	IsExists(taskId string) bool
 }
 
 type TaskRepository struct {
 	db *gorm.DB
 }
 
+var (
+	ErrTaskNotExists = errors.New("task not exits")
+)
+
+func (taskRepo *TaskRepository) First(conds ...interface{}) (*dao.Tasks, error) {
+	task := &dao.Tasks{}
+	if err := taskRepo.db.First(&task, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+func (taskRepo *TaskRepository) IsExists(taskId string) bool {
+	var count int64
+	if err := taskRepo.db.Model(&dao.Tasks{}).Where("id = ?", taskId).Limit(1).Count(&count).Error; err != nil {
+		return false
+	}
+
+	return count > 0
+}
+
+func (taskRepo *TaskRepository) FindWithAssociation(conds ...interface{}) (*[]dao.Tasks, error) {
+	tasks := &[]dao.Tasks{}
+
+	if err := taskRepo.db.Preload("Description").Preload("Person").Find(&tasks, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+
+}
+
 func (taskRepo *TaskRepository) CreateTasks(insert []*dao.Tasks) error {
 
-	if err := taskRepo.db.Model(&dao.Tasks{}).Omit("Description").Create(insert[0]).Error; err != nil {
+	if err := taskRepo.db.Model(&dao.Tasks{}).Create(insert).Error; err != nil {
 		return err
 	}
 

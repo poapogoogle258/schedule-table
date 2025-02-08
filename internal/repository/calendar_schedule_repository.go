@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"schedule_table/internal/model/dao"
 
 	"github.com/google/uuid"
@@ -15,6 +16,10 @@ type ScheduleRepository interface {
 	Delete(scheduleId string) error
 	IsExits(scheduleId string) bool
 }
+
+var (
+	ErrScheduleNotExit = errors.New("schedule not exit")
+)
 
 type scheduleRepository struct {
 	db *gorm.DB
@@ -74,7 +79,6 @@ func (scheduleRepo *scheduleRepository) UpdateSchedule(scheduleId string, insert
 }
 
 func (scheduleRepo *scheduleRepository) Delete(scheduleId string) error {
-
 	return scheduleRepo.db.Delete(&dao.Schedules{Id: uuid.MustParse(scheduleId)}).Error
 }
 

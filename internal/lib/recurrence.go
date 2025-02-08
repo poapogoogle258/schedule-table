@@ -28,13 +28,14 @@ func CreateRecurrenceTasks(schedule *dao.Schedules, start time.Time, end time.Ti
 	useNumberPeople := int(schedule.UseNumberPeople)
 	recurrenceFreq := int(schedule.Recurrence_freq)
 	recurrenceInterval := int(schedule.Recurrence_count)
-	recurrenceByMonth := util.Map(strings.Split(schedule.Recurrence_bymonth, ","), getInt)
-	if schedule.Recurrence_bymonth == "" {
-		recurrenceByMonth = []int{}
+
+	recurrenceByMonth := []int{}
+	if schedule.Recurrence_bymonth != "" {
+		recurrenceByMonth = util.Map(strings.Split(schedule.Recurrence_bymonth, ","), getInt)
 	}
-	recurrenceByWeekday := util.Map(strings.Split(schedule.Recurrence_byweekday, ","), getWeekDay)
-	if schedule.Recurrence_byweekday == "" {
-		recurrenceByWeekday = []rrule.Weekday{}
+	recurrenceByWeekday := []rrule.Weekday{}
+	if schedule.Recurrence_byweekday != "" {
+		recurrenceByWeekday = util.Map(strings.Split(schedule.Recurrence_byweekday, ","), getWeekDay)
 	}
 
 	option.Freq = rrule.Frequency(recurrenceFreq)

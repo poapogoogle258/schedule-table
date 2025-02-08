@@ -88,12 +88,21 @@ func (reqSchedule *RequestSchedule) Recurrence_count() int32 {
 	return reqSchedule.Recurrence.Count
 }
 func (reqSchedule *RequestSchedule) Recurrence_bymonth() string {
-	sl := util.Map(reqSchedule.Recurrence.Bymonth, strconv.Itoa)
-	return strings.Join(sl, ",")
+	if len(reqSchedule.Recurrence.Bymonth) == 0 {
+		return ""
+	} else {
+		sl := util.Map(reqSchedule.Recurrence.Bymonth, strconv.Itoa)
+		return strings.Join(sl, ",")
+	}
+
 }
 func (reqSchedule *RequestSchedule) Recurrence_byweekday() string {
-	sl := util.Map(reqSchedule.Recurrence.Byweekday, strconv.Itoa)
-	return strings.Join(sl, ",")
+	if len(reqSchedule.Recurrence.Byweekday) == 0 {
+		return ""
+	} else {
+		sl := util.Map(reqSchedule.Recurrence.Byweekday, strconv.Itoa)
+		return strings.Join(sl, ",")
+	}
 }
 
 func (reqSchedule *RequestSchedule) Responsibles() *[]dao.Responsible {
