@@ -54,14 +54,14 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 		return nil, errFindCalendar
 	}
 
-	workers := make([]lib.IWorker, 0)
+	workers := make(map[uuid.UUID]lib.IWorker)
 	workerQueue := make(map[uuid.UUID]lib.IWorkerQueue)
 	tasks := make([]*dao.Tasks, 0)
 	tasksDifference := make([]*dao.Tasks, 0)
 
 	// create worker
 	for _, member := range *calendar.Members {
-		workers = append(workers, lib.NewWorkerMember(&member))
+		workers[member.Id] = lib.NewWorkerMember(&member)
 	}
 
 	// create tasks
@@ -72,7 +72,7 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 			schedule := (*calendar.Schedules)[i]
 
 			if schedule.MasterScheduleId == nil {
-				workerQueue[schedule.Id] = lib.NewWorkerQueue(selectWorkersResponsible(&workers, schedule.Responsibles))
+				workerQueue[schedule.Id] = lib.NewWorkerQueue(selectWorkersResponsible(workers, *schedule.Responsibles))
 			}
 			tasksGenerated := lib.CreateRecurrenceTasks(&schedule, start, end)
 			tasksCalendar, errQueryTaskCalendar := taskHandler.TaskRepo.Find("schedule_id = ? AND start BETWEEN ? AND ?", schedule.Id, start, end)
@@ -80,9 +80,19 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 				panic(errQueryTaskCalendar)
 			}
 
+			//
+
 			// marge taskGenerated and taskCalendar to { Marge, Difference }
 		TaskCalendarLoop:
 			for _, taskCalendar := range *tasksCalendar {
+
+				// add Revered Task to worker
+				if taskCalendar.Status == constant.TaskStatus_Reserved && taskCalendar.MemberId != nil {
+					if _, ok := workers[*taskCalendar.MemberId]; ok {
+						workers[*taskCalendar.MemberId].AddReservedTask(&taskCalendar)
+					}
+				}
+
 				for j, taskGenerated := range tasksGenerated {
 					if taskGenerated.Start.Equal(taskCalendar.Start) {
 						tasksGenerated[j] = &taskCalendar
@@ -150,15 +160,12 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 	return util.Convert[[]dto.ResponseTask](&tasks), nil
 }
 
-func selectWorkersResponsible(workers *[]lib.IWorker, responsibly *[]dao.Responsible) []lib.IWorker {
+func selectWorkersResponsible(workers map[uuid.UUID]lib.IWorker, responsibly []dao.Responsible) []lib.IWorker {
 	selectWorkers := make([]lib.IWorker, 0)
 
-	for _, responsible := range *responsibly {
-		for i := 0; i < len(*workers); i++ {
-			if responsible.MemberId == (*workers)[i].GetId() {
-				selectWorkers = append(selectWorkers, (*workers)[i])
-				break
-			}
+	for _, responsible := range responsibly {
+		if _, ok := workers[responsible.MemberId]; ok {
+			selectWorkers = append(selectWorkers, workers[responsible.MemberId])
 		}
 	}
 

@@ -14,8 +14,7 @@ type IWorker interface {
 	GetId() uuid.UUID
 	IsAvailable() bool
 	AddTask(task *dao.Tasks) error
-	// AddLeaven(day time.Time) error
-	// AddReserved(task *dao.Tasks) error
+	AddReservedTask(task *dao.Tasks) error
 }
 
 var (
@@ -79,6 +78,11 @@ func (worker Worker) AddTask(task *dao.Tasks) error {
 	task.MemberId = &worker.Id
 	task.Person = worker.Info
 
+	return nil
+}
+
+func (worker *Worker) AddReservedTask(task *dao.Tasks) error {
+	worker.ReservedTasks = append(worker.ReservedTasks, task)
 	return nil
 }
 

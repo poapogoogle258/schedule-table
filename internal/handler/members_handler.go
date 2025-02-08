@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
@@ -88,8 +87,6 @@ func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error
 	calendarId := c.Param("calendarId")
 	if err := mh.calRepo.CheckExist(calendarId); err != nil {
 		return nil, err
-	} else {
-		fmt.Println("err : ", err)
 	}
 
 	memberId := c.Param("memberId")

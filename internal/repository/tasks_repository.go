@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"schedule_table/internal/model/dao"
 
 	"github.com/google/uuid"
@@ -22,10 +21,6 @@ type TaskRepository struct {
 }
 
 func (taskRepo *TaskRepository) CreateTasks(insert []*dao.Tasks) error {
-
-	fmt.Println("MemberId[0]", insert[0].MemberId)
-	fmt.Println("Person[0]", insert[0].Person.Id)
-	fmt.Println("Insert[0]", insert[0])
 
 	if err := taskRepo.db.Model(&dao.Tasks{}).Omit("Description").Create(insert[0]).Error; err != nil {
 		return err

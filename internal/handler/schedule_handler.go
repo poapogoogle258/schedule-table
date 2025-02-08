@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
@@ -73,7 +72,6 @@ func (scheHandler *scheduleHandler) CreateNewSchedule(c *gin.Context) (*dto.Resp
 		return nil, err
 	}
 
-	fmt.Println("insert", insert)
 	result, err := scheHandler.scheduleRepo.CreateNewSchedule(insert)
 	if err != nil {
 		return nil, err
