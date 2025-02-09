@@ -70,6 +70,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		calendar.POST("/:calendarId/schedules", pkg.BuildPostController(handlers.Schedule.CreateNewSchedule))
 		calendar.PATCH("/:calendarId/schedules/:scheduleId", pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
 		calendar.DELETE("/:calendarId/schedules/:scheduleId", pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
+		calendar.GET("/:calendarId/schedules/:scheduleId/responsible", pkg.BuildGetController(handlers.Schedule.GetResponsible))
 
 		// task
 		calendar.GET("/:calendarId/tasks", pkg.BuildGetController(handlers.Task.GetTasks))

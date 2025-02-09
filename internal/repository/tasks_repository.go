@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type ITaskRepository interface {
@@ -85,11 +84,16 @@ func (taskRepo *TaskRepository) FindOrderLimit(order string, limit int, conds ..
 }
 
 func (repo *TaskRepository) UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error) {
-	task := &dao.Tasks{}
 
-	if err := repo.db.Model(&task).Clauses(clause.Returning{}).Where("id = ?", taskId).Updates(value).Error; err != nil {
+	if err := repo.db.Model(&dao.Tasks{}).Where("id = ?", taskId).Updates(value).Error; err != nil {
 		return nil, err
 	}
+
+	task := &dao.Tasks{}
+	if err := repo.db.Model(&task).Preload("Person").Preload("Description").First(&task, "id = ?", taskId).Error; err != nil {
+		return nil, err
+	}
+
 	return task, nil
 }
 

@@ -15,6 +15,7 @@ type ScheduleRepository interface {
 	UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error)
 	Delete(scheduleId string) error
 	IsExits(scheduleId string) bool
+	GetMembersResponsible(scheduleId string) ([]*dao.Members, error)
 }
 
 var (
@@ -84,11 +85,21 @@ func (scheduleRepo *scheduleRepository) Delete(scheduleId string) error {
 
 func (scheduleRepo *scheduleRepository) IsExits(scheduleId string) bool {
 	var count int64
-	if err := scheduleRepo.db.Model(&dao.Schedules{}).Where("id = ?", scheduleId).Count(&count).Error; err != nil {
+	if err := scheduleRepo.db.Model(&dao.Schedules{}).Where("id = ?",
+		scheduleId).Count(&count).Error; err != nil {
 		panic(err)
 	}
 
 	return count > 0
+}
+
+func (scheduleRepo *scheduleRepository) GetMembersResponsible(scheduleId string) ([]*dao.Members, error) {
+	members := []*dao.Members{}
+	if err := scheduleRepo.db.Model(&dao.Members{}).Joins("JOIN responsibles re ON re.member_id = members.id AND re.schedule_id = ?", scheduleId).Find(&members).Error; err != nil {
+		return nil, err
+	}
+
+	return members, nil
 }
 
 func NewScheduleRepository(db *gorm.DB) ScheduleRepository {

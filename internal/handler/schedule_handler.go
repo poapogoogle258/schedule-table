@@ -7,6 +7,7 @@ import (
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
+	"schedule_table/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
@@ -18,10 +19,25 @@ type ScheduleHandler interface {
 	CreateNewSchedule(c *gin.Context) (*dto.ResponseSchedule, error)
 	UpdateSchedule(c *gin.Context) (*dto.ResponseSchedule, error)
 	DeleteSchedule(c *gin.Context) error
+	GetResponsible(c *gin.Context) (*[]dto.ResponseMember, error)
 }
 
 type scheduleHandler struct {
 	scheduleRepo repository.ScheduleRepository
+}
+
+func (scheHandler *scheduleHandler) GetResponsible(c *gin.Context) (*[]dto.ResponseMember, error) {
+	scheduleId := c.Param("scheduleId")
+	if !scheHandler.scheduleRepo.IsExits(scheduleId) {
+		return nil, pkg.NewErrorWithStatusCode(400, repository.ErrScheduleNotExit)
+	}
+
+	if members, err := scheHandler.scheduleRepo.GetMembersResponsible(scheduleId); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(500, err)
+	} else {
+		return util.Convert[[]dto.ResponseMember](members), nil
+	}
+
 }
 
 func (scheHandler *scheduleHandler) GetSchedules(c *gin.Context) (*[]dto.ResponseSchedule, error) {
