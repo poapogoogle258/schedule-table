@@ -85,14 +85,7 @@ func (mh *memberHandler) GetMembers(c *gin.Context) (*dto.ResponseMembersTable, 
 func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error) {
 
 	calendarId := c.Param("calendarId")
-	if err := mh.calRepo.CheckExist(calendarId); err != nil {
-		return nil, err
-	}
-
 	memberId := c.Param("memberId")
-	if err := mh.memberRepo.CheckExist(memberId); err != nil {
-		return nil, err
-	}
 
 	result, err := mh.memberRepo.FindOne(map[string]interface{}{
 		"id":          memberId,
@@ -150,9 +143,6 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 	}
 
 	memberId := c.Param("memberId")
-	if err := mh.memberRepo.CheckExist(memberId); err != nil {
-		return nil, err
-	}
 
 	data := util.Convert[dao.Members](&req)
 
@@ -167,14 +157,7 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {
 	calendarId := c.Param("calendarId")
-	if err := mh.calRepo.CheckExist(calendarId); err != nil {
-		return err
-	}
-
 	memberId := c.Param("memberId")
-	if err := mh.memberRepo.CheckExist(memberId); err != nil {
-		return err
-	}
 
 	return mh.memberRepo.DeleteOne(memberId, calendarId)
 }

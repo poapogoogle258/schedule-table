@@ -9,7 +9,7 @@ import (
 
 type IWorkerQueue interface {
 	Match(task *dao.Tasks) error
-	OrderQueue(task *[]dao.Tasks) error
+	OrderQueue(task []*dao.Tasks) error
 	Size() int
 }
 
@@ -61,14 +61,12 @@ func (workerQueue *WorkerQueue) Match(task *dao.Tasks) error {
 
 }
 
-func (workerQueue *WorkerQueue) OrderQueue(tasks *[]dao.Tasks) error {
+func (workerQueue *WorkerQueue) OrderQueue(tasks []*dao.Tasks) error {
 
-	_task := *tasks
-
-	slices.SortFunc(_task, sortStartDate)
+	slices.SortFunc(tasks, sortStartDate)
 	items := workerQueue.Main.All()
 
-	for _, task := range _task {
+	for _, task := range tasks {
 		for i, item := range items {
 			if item.GetId() == *task.MemberId {
 				items = append(items[:i], items[i+1:]...)
@@ -91,7 +89,7 @@ func NewWorkerQueue(workers []IWorker) IWorkerQueue {
 	}
 }
 
-func sortStartDate(a, b dao.Tasks) int {
+func sortStartDate(a, b *dao.Tasks) int {
 	if a.Start.After(b.Start) {
 		return 1
 	} else if a.Start.Before(b.Start) {

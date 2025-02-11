@@ -50,7 +50,6 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		auth.POST("/login", handlers.Auth.Login)
 		auth.POST("/signup", handlers.Auth.SignUp)
 		auth.GET("/profile", handlers.Auth.Profile)
-
 	}
 
 	api := router.Group("/api")

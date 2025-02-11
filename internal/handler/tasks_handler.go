@@ -99,24 +99,24 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 
 			// marge taskGenerated and taskCalendar
 		TaskCalendarLoop:
-			for _, taskCalendar := range *tasksCalendar {
+			for _, taskCalendar := range tasksCalendar {
 
 				// add Revered Task to worker
 				if taskCalendar.Status == constant.TaskStatus_Reserved && taskCalendar.MemberId != nil {
 					if _, ok := workers[*taskCalendar.MemberId]; ok {
-						workers[*taskCalendar.MemberId].AddReservedTask(&taskCalendar)
+						workers[*taskCalendar.MemberId].AddReservedTask(taskCalendar)
 					}
 				}
 
 				// check marge
 				for j, taskGenerated := range tasksGenerated {
 					if taskGenerated.RecurrenceId == taskCalendar.RecurrenceId {
-						tasksGenerated[j] = &taskCalendar
+						tasksGenerated[j] = taskCalendar
 						continue TaskCalendarLoop
 					}
 				}
 
-				tasksDifference = append(tasksDifference, &taskCalendar)
+				tasksDifference = append(tasksDifference, taskCalendar)
 			}
 
 			tasks = append(tasks, tasksGenerated...)

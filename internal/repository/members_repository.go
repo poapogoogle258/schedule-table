@@ -13,14 +13,13 @@ var (
 )
 
 type MembersRepository interface {
-	FindOne(conds ...interface{}) (*dao.Members, error)
-	Find(conds ...interface{}) (*[]dao.Members, error)
-	FindWithOffsetAndLimit(offset int, limit int, conds ...interface{}) (*[]dao.Members, error)
 	Count(calendarId string) int64
+	FindOne(conds ...interface{}) (*dao.Members, error)
+	Find(conds ...interface{}) ([]*dao.Members, error)
+	FindWithOffsetAndLimit(offset int, limit int, conds ...interface{}) ([]*dao.Members, error)
 	Create(newMember *dao.Members) error
 	UpdatesAndFindOne(memberId string, calendarId string, insert *dao.Members) (*dao.Members, error)
 	DeleteOne(memberId string, calendarId string) error
-	CheckExist(memberId string) error
 	IsExist(memberId string) bool
 }
 
@@ -42,8 +41,8 @@ func (memRepo *membersRepository) FindOne(conds ...interface{}) (*dao.Members, e
 	return member, nil
 }
 
-func (memRepo *membersRepository) Find(conds ...interface{}) (*[]dao.Members, error) {
-	var members *[]dao.Members
+func (memRepo *membersRepository) Find(conds ...interface{}) ([]*dao.Members, error) {
+	var members []*dao.Members
 
 	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).Find(&members, conds...).Error; err != nil {
 		return nil, err
@@ -52,8 +51,8 @@ func (memRepo *membersRepository) Find(conds ...interface{}) (*[]dao.Members, er
 	return members, nil
 }
 
-func (memRepo *membersRepository) FindWithOffsetAndLimit(offset int, limit int, conds ...interface{}) (*[]dao.Members, error) {
-	var members *[]dao.Members
+func (memRepo *membersRepository) FindWithOffsetAndLimit(offset int, limit int, conds ...interface{}) ([]*dao.Members, error) {
+	var members []*dao.Members
 
 	if err := memRepo.db.Model(&dao.Members{}).Scopes(selectColumnMember).Offset(offset).Limit(limit).Find(&members, conds...).Error; err != nil {
 		return nil, err
@@ -96,19 +95,6 @@ func (memRepo *membersRepository) IsExist(memberId string) bool {
 
 	return countMember == 1
 
-}
-
-func (memRepo *membersRepository) CheckExist(memberId string) error {
-	var countMember int64
-	if err := memRepo.db.Model(&dao.Members{}).Where("id = ?", memberId).Count(&countMember).Error; err != nil {
-		panic(err)
-	}
-
-	if countMember == 0 {
-		return ErrMemberNotFount
-	} else {
-		return nil
-	}
 }
 
 func (memRepo *membersRepository) DeleteOne(memberId string, calendarId string) error {

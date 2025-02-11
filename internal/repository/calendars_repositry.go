@@ -23,11 +23,22 @@ type CalendarRepository interface {
 	FindOneWithAssociation(calendarId string, start time.Time, end time.Time) (*dao.Calendars, error)
 	UpdateLastTimeGenerated(calendarId string) error
 	CheckRecurrenceChanged(calendarId string) bool
+	GetDefaultCalendarUser(userId string) (string, error)
 	IsExist(calendarId string) bool
 }
 
 type calendarRepository struct {
 	db *gorm.DB
+}
+
+func (calRepo *calendarRepository) GetDefaultCalendarUser(userId string) (string, error) {
+	var calendar *dao.Calendars
+	if err := calRepo.db.Select("user_id", "id").First(&calendar, "user_id = ?").Error; err != nil {
+		return "", err
+	}
+
+	return calendar.Id.String(), nil
+
 }
 
 func (calRepo *calendarRepository) IsExist(calendarId string) bool {

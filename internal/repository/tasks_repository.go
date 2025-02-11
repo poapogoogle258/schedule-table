@@ -9,13 +9,13 @@ import (
 )
 
 type ITaskRepository interface {
-	Find(conds ...interface{}) (*[]dao.Tasks, error)
+	Find(conds ...interface{}) ([]*dao.Tasks, error)
 	First(conds ...interface{}) (*dao.Tasks, error)
-	FindOrderLimit(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error)
-	UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error)
+	FindWithAssociation(conds ...interface{}) ([]*dao.Tasks, error)
+	FindOrderLimit(order string, limit int, conds ...interface{}) ([]*dao.Tasks, error)
 	CreateTasks(insert []*dao.Tasks) error
+	UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error)
 	DeleteOne(taskId uuid.UUID) error
-	FindWithAssociation(conds ...interface{}) (*[]dao.Tasks, error)
 	IsExist(taskId string) bool
 }
 
@@ -45,9 +45,9 @@ func (taskRepo *TaskRepository) IsExist(taskId string) bool {
 	return count > 0
 }
 
-func (taskRepo *TaskRepository) FindWithAssociation(conds ...interface{}) (*[]dao.Tasks, error) {
-	tasks := &[]dao.Tasks{}
+func (taskRepo *TaskRepository) FindWithAssociation(conds ...interface{}) ([]*dao.Tasks, error) {
 
+	tasks := []*dao.Tasks{}
 	if err := taskRepo.db.Preload("Description").Preload("Person").Find(&tasks, conds...).Error; err != nil {
 		return nil, err
 	}
@@ -65,8 +65,8 @@ func (taskRepo *TaskRepository) CreateTasks(insert []*dao.Tasks) error {
 	return nil
 }
 
-func (taskRepo *TaskRepository) Find(conds ...interface{}) (*[]dao.Tasks, error) {
-	var tasks *[]dao.Tasks
+func (taskRepo *TaskRepository) Find(conds ...interface{}) ([]*dao.Tasks, error) {
+	var tasks []*dao.Tasks
 	if err := taskRepo.db.Find(&tasks, conds...).Error; err != nil {
 		return nil, err
 	}
@@ -74,8 +74,8 @@ func (taskRepo *TaskRepository) Find(conds ...interface{}) (*[]dao.Tasks, error)
 	return tasks, nil
 }
 
-func (taskRepo *TaskRepository) FindOrderLimit(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error) {
-	var tasks *[]dao.Tasks
+func (taskRepo *TaskRepository) FindOrderLimit(order string, limit int, conds ...interface{}) ([]*dao.Tasks, error) {
+	var tasks []*dao.Tasks
 	if err := taskRepo.db.Limit(limit).Order(order).Find(&tasks, conds...).Error; err != nil {
 		return nil, err
 	}
@@ -97,16 +97,8 @@ func (repo *TaskRepository) UpdatesAndFind(taskId string, value interface{}) (*d
 	return task, nil
 }
 
-func (taskRepo *TaskRepository) Delete(order string, limit int, conds ...interface{}) (*[]dao.Tasks, error) {
-	var tasks *[]dao.Tasks
-	if err := taskRepo.db.Limit(limit).Order(order).Find(&tasks, conds...).Error; err != nil {
-		return nil, err
-	}
-
-	return tasks, nil
-}
-
 func (taskRepo *TaskRepository) DeleteOne(taskId uuid.UUID) error {
+
 	return taskRepo.db.Delete(&dao.Tasks{}, "id = ?", taskId).Error
 }
 

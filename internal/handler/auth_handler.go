@@ -109,10 +109,13 @@ func (handler *AuthHandlerImpl) Login(c *gin.Context) {
 		}
 
 		decode, _ := handler.jwtService.ValidateToken(token)
-		profile, _ := handler.userRepo.Profile(user.Id.String())
+		profile, _ := handler.userRepo.GetProfile(user.Id.String())
 
 		c.JSON(http.StatusOK, gin.H{
-			"user":         util.Convert[dto.ResponseUser](&profile),
+			"id":           profile.Id,
+			"name":         profile.Name,
+			"email":        profile.Email,
+			"image":        profile.ImageURL,
 			"access_token": token,
 			"expires_at":   decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
 		})
@@ -123,6 +126,7 @@ func (handler *AuthHandlerImpl) Login(c *gin.Context) {
 }
 
 func (handler *AuthHandlerImpl) Profile(c *gin.Context) {
+
 	const BEARER_SCHEMA = "Bearer "
 	authHeader := c.GetHeader("Authorization")
 	tokenString := authHeader[len(BEARER_SCHEMA):]
@@ -130,7 +134,7 @@ func (handler *AuthHandlerImpl) Profile(c *gin.Context) {
 	if token, err := handler.jwtService.ValidateToken(tokenString); err == nil {
 		claims := token.Claims.(*service.AuthCustomClaims)
 
-		if profile, err := handler.userRepo.Profile(claims.UserId); err != nil {
+		if profile, err := handler.userRepo.GetProfile(claims.UserId); err != nil {
 			c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, err.Error()))
 			return
 		} else {

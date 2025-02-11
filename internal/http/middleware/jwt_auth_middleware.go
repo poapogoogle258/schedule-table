@@ -22,14 +22,16 @@ type AuthorizeJWTMiddleware struct {
 var ErrTokenNotEqualUserToken = errors.New("token have changed, type login again")
 
 func (auth *AuthorizeJWTMiddleware) Authorize() gin.HandlerFunc {
+	const BEARER_SCHEMA = "Bearer "
+
 	return func(c *gin.Context) {
-		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 
 		if token, err := auth.JwtService.ValidateToken(tokenString); !token.Valid {
 			c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, err.Error()))
 			c.Abort()
+
 			return
 
 		} else {
@@ -47,7 +49,7 @@ func (auth *AuthorizeJWTMiddleware) Authorize() gin.HandlerFunc {
 					return
 				}
 
-				c.Set("requestAuthUserId", claims.UserId)
+				c.Set("authUserId", claims.UserId)
 				c.Next()
 			}
 

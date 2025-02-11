@@ -19,12 +19,14 @@ type MemberMiddleware struct {
 func (memberMiddle *MemberMiddleware) CheckExist() func(c *gin.Context) {
 
 	return func(c *gin.Context) {
-		scheduleId := c.Param("scheduleId")
+		scheduleId := c.Param("memberId")
 		if !memberMiddle.MemberRepo.IsExist(scheduleId) {
 			c.JSON(http.StatusNotFound, pkg.BuildWithoutResponse(http.StatusNotFound, repository.ErrMemberNotFount.Error()))
 
 			c.Abort()
 		}
+
+		c.Next()
 	}
 }
 

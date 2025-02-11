@@ -9,7 +9,7 @@ import (
 )
 
 type ScheduleRepository interface {
-	GetSchedulesCalendar(calendarId string) (*[]dao.Schedules, error)
+	GetSchedulesCalendar(calendarId string) ([]*dao.Schedules, error)
 	GetScheduleCalendarId(calendarId string, scheduleId string) (*dao.Schedules, error)
 	CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error)
 	UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error)
@@ -26,8 +26,8 @@ type scheduleRepository struct {
 	db *gorm.DB
 }
 
-func (scheduleRepo *scheduleRepository) GetSchedulesCalendar(calendarId string) (*[]dao.Schedules, error) {
-	var schedules *[]dao.Schedules
+func (scheduleRepo *scheduleRepository) GetSchedulesCalendar(calendarId string) ([]*dao.Schedules, error) {
+	var schedules []*dao.Schedules
 
 	// TODO: Order by Quese
 	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}

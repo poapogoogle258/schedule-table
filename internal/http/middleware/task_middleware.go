@@ -19,12 +19,14 @@ type TaskMiddleware struct {
 func (taskMiddle *TaskMiddleware) CheckExist() func(c *gin.Context) {
 
 	return func(c *gin.Context) {
-		calendarId := c.Param("calendarId")
+		calendarId := c.Param("taskId")
 		if !taskMiddle.TaskRepo.IsExist(calendarId) {
 			c.JSON(http.StatusNotFound, pkg.BuildWithoutResponse(http.StatusNotFound, repository.ErrCalendarNotFount.Error()))
 
 			c.Abort()
 		}
+
+		c.Next()
 	}
 }
 

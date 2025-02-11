@@ -70,7 +70,7 @@ func (leaveHd *leaveHandler) CreateNewLeave(c *gin.Context) (*dao.Leaves, error)
 		return nil, err
 	}
 
-	userId := c.GetString("requestAuthUserId")
+	userId := c.GetString("authUserId")
 	dateOnly := NewDateOnlyFormat(body.Date)
 	location, errLoadLocation := time.LoadLocation(body.Tzid)
 	if errLoadLocation != nil {

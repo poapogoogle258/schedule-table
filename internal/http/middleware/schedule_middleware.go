@@ -25,6 +25,8 @@ func (scheMiddle *ScheduleMiddleware) CheckExist() func(c *gin.Context) {
 
 			c.Abort()
 		}
+
+		c.Next()
 	}
 }
 
