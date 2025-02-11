@@ -12,7 +12,6 @@ type Users struct {
 	Description string     `gorm:"column:description" json:"description"`
 	Email       string     `gorm:"column:email;not null;uniqueIndex" json:"email"`
 	Password    string     `gorm:"column:password" json:"-"`
-	Telephone   string     `gorm:"column:telephone" json:"telephone"`
 	Token       string     `gorm:"column:token" json:"token"`
 	Calendar    *Calendars `gorm:"foreignKey:user_id" json:"calendar"`
 	BaseModel

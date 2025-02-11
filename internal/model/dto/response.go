@@ -110,6 +110,17 @@ type ResponseTask struct {
 	Description ResponseTaskDescription `json:"description"`
 }
 
+type ResponseUser struct {
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Image string `json:"image"`
+}
+
+func (responseUser *ResponseUser) ImageURL(imageUrl string) {
+	responseUser.Image = imageUrl
+}
+
 type ResponseProfile struct {
 	Id          string  `json:"id"`
 	Name        string  `json:"name"`

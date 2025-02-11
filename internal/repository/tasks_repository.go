@@ -16,7 +16,7 @@ type ITaskRepository interface {
 	CreateTasks(insert []*dao.Tasks) error
 	DeleteOne(taskId uuid.UUID) error
 	FindWithAssociation(conds ...interface{}) (*[]dao.Tasks, error)
-	IsExists(taskId string) bool
+	IsExist(taskId string) bool
 }
 
 type TaskRepository struct {
@@ -36,7 +36,7 @@ func (taskRepo *TaskRepository) First(conds ...interface{}) (*dao.Tasks, error) 
 	return task, nil
 }
 
-func (taskRepo *TaskRepository) IsExists(taskId string) bool {
+func (taskRepo *TaskRepository) IsExist(taskId string) bool {
 	var count int64
 	if err := taskRepo.db.Model(&dao.Tasks{}).Where("id = ?", taskId).Limit(1).Count(&count).Error; err != nil {
 		return false

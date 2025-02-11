@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
@@ -16,8 +16,8 @@ import (
 type AuthHandler interface {
 	Login(c *gin.Context)
 	ValidateToken(c *gin.Context)
-	CheckUserTokenExist(claims *service.AuthCustomClaims, token string) error
 	Profile(c *gin.Context)
+	SignUp(c *gin.Context)
 }
 
 type AuthHandlerImpl struct {
@@ -28,6 +28,63 @@ type AuthHandlerImpl struct {
 type loginRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type SignUpBody struct {
+	Name        string `json:"name" binding:"required"`
+	ImageUrl    string `json:"imageUrl" binding:"required"`
+	Email       string `json:"email" binding:"required"`
+	Password    string `json:"password" binding:"required"`
+	Description string `json:"description"`
+}
+
+func (handler *AuthHandlerImpl) SignUp(c *gin.Context) {
+	body := &SignUpBody{}
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+
+		return
+	}
+
+	if !handler.userRepo.IsUniqueEmail(body.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": repository.ErrDuplicateEmail.Error(),
+		})
+
+		return
+	}
+
+	newUser := &dao.Users{
+		Name:        body.Name,
+		ImageURL:    body.ImageUrl,
+		Email:       body.Email,
+		Password:    body.Password,
+		Description: body.Description,
+	}
+
+	if err := handler.userRepo.Register(newUser); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	if _, err := handler.userRepo.CreateCalendarDefault(newUser.Id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":    newUser.Id,
+		"name":  newUser.Name,
+		"email": newUser.Email,
+		"image": newUser.ImageURL,
+	})
+
 }
 
 func (handler *AuthHandlerImpl) Login(c *gin.Context) {
@@ -55,9 +112,9 @@ func (handler *AuthHandlerImpl) Login(c *gin.Context) {
 		profile, _ := handler.userRepo.Profile(user.Id.String())
 
 		c.JSON(http.StatusOK, gin.H{
-			"profile": util.Convert[dto.ResponseProfile](&profile),
-			"token":   token,
-			"exp":     decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
+			"user":         util.Convert[dto.ResponseUser](&profile),
+			"access_token": token,
+			"expires_at":   decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
 		})
 	} else {
 		c.JSON(http.StatusForbidden, gin.H{})
@@ -111,17 +168,6 @@ func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 
 	}
 
-}
-
-func (s *AuthHandlerImpl) CheckUserTokenExist(claims *service.AuthCustomClaims, token string) error {
-	user, err := s.userRepo.FindOne(claims.UserId)
-	if err != nil {
-		return fmt.Errorf("not found this user")
-	} else if user.Token != token {
-		return fmt.Errorf("token duplicate, try login again")
-	} else {
-		return nil
-	}
 }
 
 func NewAuthHandler(jwtService service.JWTService, userRepo repository.UserRepository) AuthHandler {

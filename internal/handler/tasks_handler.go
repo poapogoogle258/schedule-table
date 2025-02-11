@@ -52,7 +52,7 @@ func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, 
 	end := util.Must(time.Parse(time.RFC3339, query.End))
 
 	if !taskHandler.CalRepo.CheckRecurrenceChanged(calendarId) {
-		if tasks, err := taskHandler.TaskRepo.FindWithAssociation("start BETWEEN ? AND ?", start, end); err != nil {
+		if tasks, err := taskHandler.TaskRepo.FindWithAssociation("calendar_id = ? AND start BETWEEN ? AND ?", calendarId, start, end); err != nil {
 			return nil, err
 		} else {
 			return util.Convert[[]dto.ResponseTask](&tasks), nil
@@ -208,10 +208,10 @@ func softByDateTimeAndPriority(a, b *dao.Tasks) int {
 }
 
 type ReserveMemberBody struct {
-	MemberId string    `json:"member_id" binding:"required"`
-	Start    time.Time `json:"start" binding:"required"`
-	End      time.Time `json:"end" binding:"required"`
-	Status   int8      `json:"status" binding:"required"`
+	MemberId *uuid.UUID `json:"member_id" binding:"-"`
+	Start    time.Time  `json:"start" binding:"required"`
+	End      time.Time  `json:"end" binding:"required"`
+	Status   int8       `json:"status" binding:"required"`
 }
 
 var (
@@ -221,12 +221,12 @@ var (
 func (handler *tasksHandler) EditTask(c *gin.Context) (*dto.ResponseTask, error) {
 
 	calendarId := c.Param("calendarId")
-	if !handler.CalRepo.IsExists(calendarId) {
+	if !handler.CalRepo.IsExist(calendarId) {
 		return nil, pkg.NewErrorWithStatusCode(404, repository.ErrCalendarNotFount)
 	}
 
 	taskId := c.Param("taskId")
-	if !handler.TaskRepo.IsExists(taskId) {
+	if !handler.TaskRepo.IsExist(taskId) {
 		return nil, pkg.NewErrorWithStatusCode(404, repository.ErrTaskNotExists)
 	}
 
@@ -243,9 +243,8 @@ func (handler *tasksHandler) EditTask(c *gin.Context) (*dto.ResponseTask, error)
 		return nil, pkg.NewErrorWithStatusCode(400, err)
 	}
 
-	memberId := uuid.MustParse(body.MemberId)
 	data := map[string]interface{}{
-		"member_id": &memberId,
+		"member_id": body.MemberId,
 		"start":     body.Start,
 		"end":       body.End,
 		"status":    constant.TaskStatus(body.Status),

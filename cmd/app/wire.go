@@ -6,6 +6,7 @@ package main
 import (
 	"schedule_table/internal/database"
 	"schedule_table/internal/handler"
+	"schedule_table/internal/http/middleware"
 	"schedule_table/internal/http/router"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
@@ -19,10 +20,13 @@ var (
 		repository.NewCalendarRepository,
 	)
 
+	jwtAuthSet = wire.NewSet(
+		service.NewJWTAuthService,
+	)
+
 	authSet = wire.NewSet(
 		handler.NewAuthHandler,
 		repository.NewUserRepository,
-		service.NewJWTAuthService,
 	)
 
 	memberSet = wire.NewSet(
@@ -40,15 +44,23 @@ var (
 		repository.NewTaskRepository,
 	)
 
-	leaveSet = wire.NewSet(
-		handler.NewLeaveHandler,
-		repository.NewLeaveRepository,
+	// leaveSet = wire.NewSet(
+	// 	handler.NewLeaveHandler,
+	// 	repository.NewLeaveRepository,
+	// )
+
+	middlewareSet = wire.NewSet(
+		middleware.NewAuthorizeJWTMiddleware,
+		middleware.NewCalendarMiddleware,
+		middleware.NewMemberMiddleware,
+		middleware.NewScheduleMiddleware,
+		middleware.NewTaskMiddleware,
 	)
 )
 
 func Injector() *router.Handlers {
 
-	wire.Build(leaveSet, taskSet, scheduleSet, memberSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
+	wire.Build(middlewareSet, jwtAuthSet, taskSet, scheduleSet, memberSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
 
 	return &router.Handlers{}
 

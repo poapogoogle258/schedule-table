@@ -1,44 +1,63 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
-	"schedule_table/internal/handler"
+	"schedule_table/internal/pkg"
+	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-func AuthorizeJWT(handlerAuth handler.AuthHandler) gin.HandlerFunc {
+type IAuthorizeJWTMiddleware interface {
+	Authorize() gin.HandlerFunc
+}
 
-	jwt_service := service.NewJWTAuthService()
+type AuthorizeJWTMiddleware struct {
+	JwtService service.JWTService
+	UserRepo   repository.UserRepository
+}
 
+var ErrTokenNotEqualUserToken = errors.New("token have changed, type login again")
+
+func (auth *AuthorizeJWTMiddleware) Authorize() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 
-		token, err := jwt_service.ValidateToken(tokenString)
+		if token, err := auth.JwtService.ValidateToken(tokenString); !token.Valid {
+			c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, err.Error()))
+			c.Abort()
+			return
 
-		if token.Valid {
+		} else {
 			claims := token.Claims.(*service.AuthCustomClaims)
 
-			if err := handlerAuth.CheckUserTokenExist(claims, tokenString); err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"statusCode": http.StatusUnauthorized,
-					"message":    err.Error(),
-				})
-				c.Abort()
+			if userToken, err := auth.UserRepo.GetTokenUser(claims.UserId); err != nil {
+				c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, err.Error()))
+				return
+
 			} else {
+
+				if userToken != tokenString {
+					c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, ErrTokenNotEqualUserToken.Error()))
+					c.Abort()
+					return
+				}
+
 				c.Set("requestAuthUserId", claims.UserId)
 				c.Next()
 			}
 
-		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"statusCode": http.StatusUnauthorized,
-				"message":    err.Error(),
-			})
-			c.Abort()
 		}
+	}
+}
+
+func NewAuthorizeJWTMiddleware(jwtServer service.JWTService, userRepo repository.UserRepository) IAuthorizeJWTMiddleware {
+	return &AuthorizeJWTMiddleware{
+		JwtService: jwtServer,
+		UserRepo:   userRepo,
 	}
 }

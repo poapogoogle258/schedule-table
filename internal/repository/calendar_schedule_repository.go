@@ -14,7 +14,7 @@ type ScheduleRepository interface {
 	CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error)
 	UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error)
 	Delete(scheduleId string) error
-	IsExits(scheduleId string) bool
+	IsExist(scheduleId string) bool
 	GetMembersResponsible(scheduleId string) ([]*dao.Members, error)
 }
 
@@ -83,7 +83,7 @@ func (scheduleRepo *scheduleRepository) Delete(scheduleId string) error {
 	return scheduleRepo.db.Delete(&dao.Schedules{Id: uuid.MustParse(scheduleId)}).Error
 }
 
-func (scheduleRepo *scheduleRepository) IsExits(scheduleId string) bool {
+func (scheduleRepo *scheduleRepository) IsExist(scheduleId string) bool {
 	var count int64
 	if err := scheduleRepo.db.Model(&dao.Schedules{}).Where("id = ?",
 		scheduleId).Count(&count).Error; err != nil {

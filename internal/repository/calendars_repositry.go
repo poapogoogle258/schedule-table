@@ -23,14 +23,14 @@ type CalendarRepository interface {
 	FindOneWithAssociation(calendarId string, start time.Time, end time.Time) (*dao.Calendars, error)
 	UpdateLastTimeGenerated(calendarId string) error
 	CheckRecurrenceChanged(calendarId string) bool
-	IsExists(calendarId string) bool
+	IsExist(calendarId string) bool
 }
 
 type calendarRepository struct {
 	db *gorm.DB
 }
 
-func (calRepo *calendarRepository) IsExists(calendarId string) bool {
+func (calRepo *calendarRepository) IsExist(calendarId string) bool {
 	var count int64
 	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Limit(1).Count(&count).Error; err != nil {
 		return false

@@ -21,6 +21,7 @@ type MembersRepository interface {
 	UpdatesAndFindOne(memberId string, calendarId string, insert *dao.Members) (*dao.Members, error)
 	DeleteOne(memberId string, calendarId string) error
 	CheckExist(memberId string) error
+	IsExist(memberId string) bool
 }
 
 type membersRepository struct {
@@ -87,6 +88,16 @@ func (memRepo *membersRepository) UpdatesAndFindOne(memberId string, calendarId 
 	return member, nil
 }
 
+func (memRepo *membersRepository) IsExist(memberId string) bool {
+	var countMember int64
+	if err := memRepo.db.Model(&dao.Members{}).Where("id = ?", memberId).Limit(1).Count(&countMember).Error; err != nil {
+		return false
+	}
+
+	return countMember == 1
+
+}
+
 func (memRepo *membersRepository) CheckExist(memberId string) error {
 	var countMember int64
 	if err := memRepo.db.Model(&dao.Members{}).Where("id = ?", memberId).Count(&countMember).Error; err != nil {
@@ -98,7 +109,6 @@ func (memRepo *membersRepository) CheckExist(memberId string) error {
 	} else {
 		return nil
 	}
-
 }
 
 func (memRepo *membersRepository) DeleteOne(memberId string, calendarId string) error {

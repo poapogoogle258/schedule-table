@@ -9,6 +9,7 @@ import (
 
 type CalendarsHandler interface {
 	GetMyCalendar(c *gin.Context) (*[]dto.ResponseCalendar, error)
+	IsCalendarExists(calendarId string) bool
 }
 
 type calendarsHandler struct {
@@ -19,6 +20,10 @@ func (calHandler *calendarsHandler) GetMyCalendar(c *gin.Context) (*[]dto.Respon
 	userId := c.GetString("requestAuthUserId")
 
 	return calHandler.calRepo.FindByOwnerId(userId)
+}
+
+func (calHandler *calendarsHandler) IsCalendarExists(calendarId string) bool {
+	return calHandler.calRepo.IsExist(calendarId)
 }
 
 func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {

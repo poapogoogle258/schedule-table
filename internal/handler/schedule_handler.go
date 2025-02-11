@@ -28,7 +28,7 @@ type scheduleHandler struct {
 
 func (scheHandler *scheduleHandler) GetResponsible(c *gin.Context) (*[]dto.ResponseMember, error) {
 	scheduleId := c.Param("scheduleId")
-	if !scheHandler.scheduleRepo.IsExits(scheduleId) {
+	if !scheHandler.scheduleRepo.IsExist(scheduleId) {
 		return nil, pkg.NewErrorWithStatusCode(400, repository.ErrScheduleNotExit)
 	}
 
@@ -112,7 +112,7 @@ func (scheHandler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.Respons
 
 	// TODO : Validate request
 
-	if !scheHandler.scheduleRepo.IsExits(scheduleId) {
+	if !scheHandler.scheduleRepo.IsExist(scheduleId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, errors.New("not fount this schedule id"))
 	}
 

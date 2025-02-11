@@ -10,6 +10,7 @@ import (
 	"github.com/google/wire"
 	"schedule_table/internal/database"
 	"schedule_table/internal/handler"
+	"schedule_table/internal/http/middleware"
 	"schedule_table/internal/http/router"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
@@ -18,27 +19,34 @@ import (
 // Injectors from wire.go:
 
 func Injector() *router.Handlers {
-	db := database.ConnectPostgresql()
-	calendarRepository := repository.NewCalendarRepository(db)
-	calendarsHandler := handler.NewCalendarsHandler(calendarRepository)
 	jwtService := service.NewJWTAuthService()
+	db := database.ConnectPostgresql()
 	userRepository := repository.NewUserRepository(db)
 	authHandler := handler.NewAuthHandler(jwtService, userRepository)
+	iAuthorizeJWTMiddleware := middleware.NewAuthorizeJWTMiddleware(jwtService, userRepository)
+	calendarRepository := repository.NewCalendarRepository(db)
+	calendarsHandler := handler.NewCalendarsHandler(calendarRepository)
+	iCalendarMiddleware := middleware.NewCalendarMiddleware(calendarRepository)
 	membersRepository := repository.NewMemberRepository(db)
 	memberHandler := handler.NewMemberHandler(membersRepository, calendarRepository)
+	iMemberMiddleware := middleware.NewMemberMiddleware(membersRepository)
 	scheduleRepository := repository.NewScheduleRepository(db)
 	scheduleHandler := handler.NewScheduleHandler(scheduleRepository)
+	iScheduleMiddleware := middleware.NewScheduleMiddleware(scheduleRepository)
 	iTaskRepository := repository.NewTaskRepository(db)
 	tasksHandler := handler.NewTasksHandler(calendarRepository, iTaskRepository, scheduleRepository, membersRepository)
-	leaveRepository := repository.NewLeaveRepository(db)
-	leaveHandler := handler.NewLeaveHandler(calendarRepository, leaveRepository)
+	iTaskMiddleware := middleware.NewTaskMiddleware(iTaskRepository)
 	handlers := &router.Handlers{
-		Calendar: calendarsHandler,
-		Auth:     authHandler,
-		Member:   memberHandler,
-		Schedule: scheduleHandler,
-		Task:     tasksHandler,
-		Leave:    leaveHandler,
+		Auth:           authHandler,
+		AuthJWTMiddle:  iAuthorizeJWTMiddleware,
+		Calendar:       calendarsHandler,
+		CalendarMiddle: iCalendarMiddleware,
+		Member:         memberHandler,
+		MemberMiddle:   iMemberMiddleware,
+		Schedule:       scheduleHandler,
+		ScheduleMiddle: iScheduleMiddleware,
+		Task:           tasksHandler,
+		TaskMiddle:     iTaskMiddleware,
 	}
 	return handlers
 }
@@ -48,7 +56,9 @@ func Injector() *router.Handlers {
 var (
 	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository)
 
-	authSet = wire.NewSet(handler.NewAuthHandler, repository.NewUserRepository, service.NewJWTAuthService)
+	jwtAuthSet = wire.NewSet(service.NewJWTAuthService)
+
+	authSet = wire.NewSet(handler.NewAuthHandler, repository.NewUserRepository)
 
 	memberSet = wire.NewSet(handler.NewMemberHandler, repository.NewMemberRepository)
 
@@ -56,5 +66,5 @@ var (
 
 	taskSet = wire.NewSet(handler.NewTasksHandler, repository.NewTaskRepository)
 
-	leaveSet = wire.NewSet(handler.NewLeaveHandler, repository.NewLeaveRepository)
+	middlewareSet = wire.NewSet(middleware.NewAuthorizeJWTMiddleware, middleware.NewCalendarMiddleware, middleware.NewMemberMiddleware, middleware.NewScheduleMiddleware, middleware.NewTaskMiddleware)
 )

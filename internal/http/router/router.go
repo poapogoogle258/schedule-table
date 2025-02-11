@@ -16,12 +16,16 @@ import (
 )
 
 type Handlers struct {
-	Calendar handler.CalendarsHandler
-	Auth     handler.AuthHandler
-	Member   handler.MemberHandler
-	Schedule handler.ScheduleHandler
-	Task     handler.TasksHandler
-	Leave    handler.LeaveHandler
+	Auth           handler.AuthHandler
+	AuthJWTMiddle  middleware.IAuthorizeJWTMiddleware
+	Calendar       handler.CalendarsHandler
+	CalendarMiddle middleware.ICalendarMiddleware
+	Member         handler.MemberHandler
+	MemberMiddle   middleware.IMemberMiddleware
+	Schedule       handler.ScheduleHandler
+	ScheduleMiddle middleware.IScheduleMiddleware
+	Task           handler.TasksHandler
+	TaskMiddle     middleware.ITaskMiddleware
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -44,42 +48,47 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/login", handlers.Auth.Login)
+		auth.POST("/signup", handlers.Auth.SignUp)
 		auth.GET("/profile", handlers.Auth.Profile)
 
 	}
 
 	api := router.Group("/api")
-	api.Use(middleware.AuthorizeJWT(handlers.Auth))
+	api.Use(handlers.AuthJWTMiddle.Authorize())
 
 	{
-		calendar := api.Group("/calendars")
+		calendar := api.Group("/calendars/:calendarId")
 
-		// calendar
-		calendar.GET("/", pkg.BuildGetController(handlers.Calendar.GetMyCalendar))
+		{
+			calendar.Use(handlers.CalendarMiddle.CheckExist())
 
-		// members
-		calendar.GET("/:calendarId/members", pkg.BuildGetController(handlers.Member.GetMembers))
-		calendar.POST("/:calendarId/members", pkg.BuildPostController(handlers.Member.CreateNewMember))
-		calendar.GET("/:calendarId/members/:memberId", pkg.BuildGetController(handlers.Member.GetMemberId))
-		calendar.PATCH("/:calendarId/members/:memberId", pkg.BuildPatchController(handlers.Member.EditMember))
-		calendar.DELETE("/:calendarId/members/:memberId", pkg.BuildDeleteController(handlers.Member.DeleteMemberId))
+			// members
+			calendar.GET("/members", pkg.BuildGetController(handlers.Member.GetMembers))
+			calendar.POST("/members", pkg.BuildPostController(handlers.Member.CreateNewMember))
+			calendar.GET("/members/:memberId", handlers.MemberMiddle.CheckExist(), pkg.BuildGetController(handlers.Member.GetMemberId))
+			calendar.PATCH("/members/:memberId", handlers.MemberMiddle.CheckExist(), pkg.BuildPatchController(handlers.Member.EditMember))
+			calendar.DELETE("/members/:memberId", handlers.MemberMiddle.CheckExist(), pkg.BuildDeleteController(handlers.Member.DeleteMemberId))
 
-		// schedule
-		calendar.GET("/:calendarId/schedules", pkg.BuildGetController(handlers.Schedule.GetSchedules))
-		calendar.GET("/:calendarId/schedules/:scheduleId", pkg.BuildGetController(handlers.Schedule.GetScheduleId))
-		calendar.POST("/:calendarId/schedules", pkg.BuildPostController(handlers.Schedule.CreateNewSchedule))
-		calendar.PATCH("/:calendarId/schedules/:scheduleId", pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
-		calendar.DELETE("/:calendarId/schedules/:scheduleId", pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
-		calendar.GET("/:calendarId/schedules/:scheduleId/responsible", pkg.BuildGetController(handlers.Schedule.GetResponsible))
+			// schedule
+			calendar.GET("/schedules", pkg.BuildGetController(handlers.Schedule.GetSchedules))
+			calendar.POST("/schedules", pkg.BuildPostController(handlers.Schedule.CreateNewSchedule))
+			calendar.GET("/schedules/:scheduleId", handlers.ScheduleMiddle.CheckExist(), pkg.BuildGetController(handlers.Schedule.GetScheduleId))
+			calendar.PATCH("/schedules/:scheduleId", handlers.ScheduleMiddle.CheckExist(), pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
+			calendar.DELETE("/schedules/:scheduleId", handlers.ScheduleMiddle.CheckExist(), pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
 
-		// task
-		calendar.GET("/:calendarId/tasks", pkg.BuildGetController(handlers.Task.GetTasks))
-		calendar.PATCH("/:calendarId/tasks/:taskId", pkg.BuildPatchController(handlers.Task.EditTask))
+			// get members responsible
+			calendar.GET("/schedules/:scheduleId/responsible", handlers.ScheduleMiddle.CheckExist(), pkg.BuildGetController(handlers.Schedule.GetResponsible))
 
-		// leave
-		calendar.GET("/:calendarId/leaves", pkg.BuildGetController(handlers.Leave.GetLeave))
-		calendar.POST("/:calendarId/leaves", pkg.BuildPostController(handlers.Leave.CreateNewLeave))
-		calendar.DELETE("/:calendarId/leaves/:leaveId", pkg.BuildDeleteController(handlers.Leave.Delete))
+			// task
+			calendar.GET("/tasks", pkg.BuildGetController(handlers.Task.GetTasks))
+			calendar.PATCH("/tasks/:taskId", handlers.TaskMiddle.CheckExist(), pkg.BuildPatchController(handlers.Task.EditTask))
+
+			// Not this phaser 1 implement on phaser 2 or 3 ?
+			// leave
+			// calendar.GET("/leaves", pkg.BuildGetController(handlers.Leave.GetLeave))
+			// calendar.POST("/leaves", pkg.BuildPostController(handlers.Leave.CreateNewLeave))
+			// calendar.DELETE("/leaves/:leaveId", pkg.BuildDeleteController(handlers.Leave.Delete))
+		}
 
 	}
 
