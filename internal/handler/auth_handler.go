@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+var ErrRequestAuthorizationHeader = errors.New("request token in authorization header")
 
 type AuthHandler interface {
 	Login(c *gin.Context)
@@ -127,9 +130,13 @@ func (handler *AuthHandlerImpl) Login(c *gin.Context) {
 
 func (handler *AuthHandlerImpl) Profile(c *gin.Context) {
 
-	const BEARER_SCHEMA = "Bearer "
-	authHeader := c.GetHeader("Authorization")
-	tokenString := authHeader[len(BEARER_SCHEMA):]
+	tokenString, errGetToken := getTokenFromHeader(c)
+	if errGetToken != nil {
+		c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, errGetToken.Error()))
+		c.Abort()
+
+		return
+	}
 
 	if token, err := handler.jwtService.ValidateToken(tokenString); err == nil {
 		claims := token.Claims.(*service.AuthCustomClaims)
@@ -149,9 +156,13 @@ func (handler *AuthHandlerImpl) Profile(c *gin.Context) {
 
 func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 
-	const BEARER_SCHEMA = "Bearer "
-	authHeader := c.GetHeader("Authorization")
-	tokenString := authHeader[len(BEARER_SCHEMA):]
+	tokenString, errGetToken := getTokenFromHeader(c)
+	if errGetToken != nil {
+		c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, errGetToken.Error()))
+		c.Abort()
+
+		return
+	}
 
 	token, err := s.jwtService.ValidateToken(tokenString)
 
@@ -172,6 +183,18 @@ func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
 
 	}
 
+}
+
+func getTokenFromHeader(c *gin.Context) (string, error) {
+
+	const BEARER_SCHEMA = "Bearer "
+	authHeader := c.GetHeader("Authorization")
+
+	if authHeader == "" || len(authHeader) <= len(BEARER_SCHEMA) {
+		return "", ErrRequestAuthorizationHeader
+	}
+
+	return authHeader[len(BEARER_SCHEMA):], nil
 }
 
 func NewAuthHandler(jwtService service.JWTService, userRepo repository.UserRepository) AuthHandler {
