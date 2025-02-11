@@ -59,7 +59,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		calendar := api.Group("/calendars/:calendarId")
 
 		{
-			calendar.Use(handlers.CalendarMiddle.CheckExist())
+			calendar.Use(handlers.CalendarMiddle.CheckExist(), handlers.CalendarMiddle.IsOwner())
 
 			// members
 			calendar.GET("/members", pkg.BuildGetController(handlers.Member.GetMembers))

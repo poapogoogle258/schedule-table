@@ -15,6 +15,7 @@ var (
 
 type ICalendarMiddleware interface {
 	CheckExist() func(c *gin.Context)
+	IsOwner() func(c *gin.Context)
 }
 
 type CalendarMiddleware struct {

@@ -33,7 +33,7 @@ type calendarRepository struct {
 
 func (calRepo *calendarRepository) GetDefaultCalendarUser(userId string) (string, error) {
 	var calendar *dao.Calendars
-	if err := calRepo.db.Select("user_id", "id").First(&calendar, "user_id = ?").Error; err != nil {
+	if err := calRepo.db.Select("user_id", "id").First(&calendar, "user_id = ?", userId).Error; err != nil {
 		return "", err
 	}
 
