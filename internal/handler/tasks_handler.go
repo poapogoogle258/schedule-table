@@ -19,6 +19,11 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	ErrQueryStartMustFormat = errors.New("format start query string must be RFC3339 2006-01-02T15:04:05Z07:00")
+	ErrQueryEndMustFormat   = errors.New("format end query string must be RFC3339 2006-01-02T15:04:05Z07:00")
+)
+
 type TasksHandler interface {
 	GetTasks(c *gin.Context) (*[]dto.ResponseTask, error)
 	EditTask(c *gin.Context) (*dto.ResponseTask, error)
@@ -37,22 +42,24 @@ type queryStringGetTasks struct {
 }
 
 func (taskHandler *tasksHandler) GetTasks(c *gin.Context) (*[]dto.ResponseTask, error) {
+	calendarId := c.Param("calendarId")
 
 	var query queryStringGetTasks
 	if err := c.BindQuery(&query); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, errors.New("query string not validate"))
 	}
 
-	calendarId := c.Param("calendarId")
-	if err := taskHandler.CalRepo.CheckExist(calendarId); err != nil {
-		return nil, err
+	start, errParseStart := time.Parse(time.RFC3339, query.Start)
+	if errParseStart != nil {
+		return nil, pkg.NewErrorWithStatusCode(400, ErrQueryStartMustFormat)
+	}
+	end, errParseEnd := time.Parse(time.RFC3339, query.End)
+	if errParseEnd != nil {
+		return nil, pkg.NewErrorWithStatusCode(400, ErrQueryEndMustFormat)
 	}
 
-	start := util.Must(time.Parse(time.RFC3339, query.Start))
-	end := util.Must(time.Parse(time.RFC3339, query.End))
-
 	if !taskHandler.CalRepo.CheckRecurrenceChanged(calendarId) {
-		if tasks, err := taskHandler.TaskRepo.FindWithAssociation("calendar_id = ? AND start BETWEEN ? AND ?", calendarId, start, end); err != nil {
+		if tasks, err := taskHandler.TaskRepo.FindWithAssociation("calendar_id = ? AND start BETWEEN ? AND ?", calendarId, query.Start, query.End); err != nil {
 			return nil, err
 		} else {
 			return util.Convert[[]dto.ResponseTask](&tasks), nil
@@ -220,15 +227,7 @@ var (
 
 func (handler *tasksHandler) EditTask(c *gin.Context) (*dto.ResponseTask, error) {
 
-	calendarId := c.Param("calendarId")
-	if !handler.CalRepo.IsExist(calendarId) {
-		return nil, pkg.NewErrorWithStatusCode(404, repository.ErrCalendarNotFount)
-	}
-
 	taskId := c.Param("taskId")
-	if !handler.TaskRepo.IsExist(taskId) {
-		return nil, pkg.NewErrorWithStatusCode(404, repository.ErrTaskNotExists)
-	}
 
 	body := &ReserveMemberBody{}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {

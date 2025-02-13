@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
@@ -10,6 +9,7 @@ import (
 	"schedule_table/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 )
 
@@ -28,9 +28,6 @@ type scheduleHandler struct {
 
 func (scheHandler *scheduleHandler) GetResponsible(c *gin.Context) (*[]dto.ResponseMember, error) {
 	scheduleId := c.Param("scheduleId")
-	if !scheHandler.scheduleRepo.IsExist(scheduleId) {
-		return nil, pkg.NewErrorWithStatusCode(400, repository.ErrScheduleNotExit)
-	}
 
 	if members, err := scheHandler.scheduleRepo.GetMembersResponsible(scheduleId); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(500, err)
@@ -75,7 +72,7 @@ func (scheHandler *scheduleHandler) GetScheduleId(c *gin.Context) (*dto.Response
 }
 
 func (scheHandler *scheduleHandler) CreateNewSchedule(c *gin.Context) (*dto.ResponseSchedule, error) {
-	// calendarId := c.Param("calendarId")
+	calendarId := c.Param("calendarId")
 	var req *dto.RequestSchedule
 	if err := c.ShouldBind(&req); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request"))
@@ -84,6 +81,7 @@ func (scheHandler *scheduleHandler) CreateNewSchedule(c *gin.Context) (*dto.Resp
 	// TODO : Validate request
 
 	insert := &dao.Schedules{}
+	insert.CalendarId = uuid.MustParse(calendarId)
 	if err := copier.Copy(&insert, &req); err != nil {
 		return nil, err
 	}
@@ -111,10 +109,6 @@ func (scheHandler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.Respons
 	}
 
 	// TODO : Validate request
-
-	if !scheHandler.scheduleRepo.IsExist(scheduleId) {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, errors.New("not fount this schedule id"))
-	}
 
 	insert := &dao.Schedules{}
 	if err := copier.Copy(&insert, &req); err != nil {

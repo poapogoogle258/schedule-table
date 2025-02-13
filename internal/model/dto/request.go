@@ -58,7 +58,6 @@ func (newMember *RequestCreateNewMember) Validate() error {
 
 type RequestSchedule struct {
 	MasterScheduleId *string          `json:"master_id"`
-	CalendarId       string           `json:"calendar_id"`
 	Name             string           `json:"name"`
 	Description      string           `json:"description"`
 	ImageURL         string           `json:"imageURL"`

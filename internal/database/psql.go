@@ -21,13 +21,13 @@ func ConnectPostgresql() *gorm.DB {
 
 	db, _ := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	if os.Getenv("MIGRATE_SETUP") == "init" {
-		migrate_err := MigrateSetUpAndInitData(db)
+	// if os.Getenv("MIGRATE_SETUP") == "init" {
+	// 	migrate_err := MigrateSetUpAndInitData(db)
 
-		if migrate_err != nil {
-			fmt.Println(migrate_err)
-		}
-	}
+	// 	if migrate_err != nil {
+	// 		fmt.Println(migrate_err)
+	// 	}
+	// }
 
 	return db
 

@@ -102,17 +102,14 @@ func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error
 }
 
 func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, error) {
+
+	calendarId := c.Param("calendarId")
 	var req dto.RequestCreateNewMember
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
-	}
-
-	calendarId := c.Param("calendarId")
-	if err := mh.calRepo.CheckExist(calendarId); err != nil {
-		return nil, err
 	}
 
 	insert := util.Convert[dao.Members](&req)
@@ -129,6 +126,8 @@ func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, e
 
 func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error) {
 
+	calendarId := c.Param("calendarId")
+	memberId := c.Param("memberId")
 	var req dto.RequestCreateNewMember
 	if err := c.ShouldBind(&req); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
@@ -136,13 +135,6 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 	if err := req.Validate(); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
-
-	calendarId := c.Param("calendarId")
-	if err := mh.calRepo.CheckExist(calendarId); err != nil {
-		return nil, err
-	}
-
-	memberId := c.Param("memberId")
 
 	data := util.Convert[dao.Members](&req)
 
@@ -152,7 +144,6 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 		response := util.Convert[dto.ResponseMember](&result)
 		return response, nil
 	}
-
 }
 
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {

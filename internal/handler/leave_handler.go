@@ -60,17 +60,14 @@ type CreateNewLeaveBody struct {
 }
 
 func (leaveHd *leaveHandler) CreateNewLeave(c *gin.Context) (*dao.Leaves, error) {
+	calendarId := c.Param("calendarId")
+	userId := c.GetString("authUserId")
+
 	var body CreateNewLeaveBody
 	if err := c.ShouldBind(&body); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request body request date in body"))
 	}
 
-	calendarId := c.Param("calendarId")
-	if err := leaveHd.CalRepo.CheckExist(calendarId); err != nil {
-		return nil, err
-	}
-
-	userId := c.GetString("authUserId")
 	dateOnly := NewDateOnlyFormat(body.Date)
 	location, errLoadLocation := time.LoadLocation(body.Tzid)
 	if errLoadLocation != nil {
