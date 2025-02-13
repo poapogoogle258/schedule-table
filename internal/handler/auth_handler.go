@@ -16,7 +16,11 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-var ErrRequestAuthorizationHeader = errors.New("request token in authorization header")
+var (
+	ErrRequestAuthorizationHeader = errors.New("request token in authorization header")
+	ErrAuthEmailInvalid           = errors.New("email invalid")
+	ErrAuthPasswordInvalid        = errors.New("password invalid")
+)
 
 type AuthHandler interface {
 	Login(c *gin.Context)
@@ -35,7 +39,7 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type SignUpBody struct {
+type signUpBody struct {
 	Name        string `json:"name" binding:"required"`
 	ImageUrl    string `json:"imageUrl" binding:"required"`
 	Email       string `json:"email" binding:"required"`
@@ -43,15 +47,15 @@ type SignUpBody struct {
 	Description string `json:"description"`
 }
 
-type SignUpUserResponse struct {
-	Id    uuid.UUID `json:"id"`
-	Name  string    `json:"name"`
-	Email string    `json:"email"`
-	Image string    `json:"image"`
+type signUpUserResponse struct {
+	Id       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Email    string    `json:"email"`
+	ImageURL string    `json:"image"`
 }
 
 func (handler *AuthHandlerImpl) SignUp(c *gin.Context) {
-	var body SignUpBody
+	var body signUpBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, pkg.BuildWithoutResponse(http.StatusBadRequest, err.Error()))
 		c.Abort()
@@ -88,47 +92,77 @@ func (handler *AuthHandlerImpl) SignUp(c *gin.Context) {
 		return
 	}
 
-	resp := &SignUpUserResponse{}
+	resp := &signUpUserResponse{}
 	copier.Copy(&resp, newUser)
 
 	c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, resp))
+}
+
+type loginResponse struct {
+	Id          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Email       string    `json:"email"`
+	ImageURL    string    `json:"image"`
+	AccessToken string    `json:"access_token"`
+	ExpiresAt   int64     `json:"expires_at"`
 }
 
 func (handler *AuthHandlerImpl) Login(c *gin.Context) {
 
 	var request loginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"message": "no data found",
-		})
+		c.JSON(http.StatusBadRequest, pkg.BuildWithoutResponse(http.StatusBadRequest, err.Error()))
+		c.Abort()
+
 		return
 	}
 
-	user, err := handler.userRepo.FindOneByEmail(request.Email)
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{})
+	user, errQueryUserBuEmail := handler.userRepo.FindOneByEmail(request.Email)
+	if errQueryUserBuEmail != nil {
+		c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, ErrAuthEmailInvalid.Error()))
+		c.Abort()
+
+		return
 	}
 
-	if util.VerifyPassword(request.Password, user.Password) {
-		token := handler.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
-		if err := handler.userRepo.UpdateOne(user.Id.String(), "token", token); err != nil {
-			panic(err)
-		}
+	if !util.VerifyPassword(request.Password, user.Password) {
+		c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, ErrAuthPasswordInvalid.Error()))
+		c.Abort()
 
-		decode, _ := handler.jwtService.ValidateToken(token)
-		profile, _ := handler.userRepo.GetProfile(user.Id.String())
-
-		c.JSON(http.StatusOK, gin.H{
-			"id":           profile.Id,
-			"name":         profile.Name,
-			"email":        profile.Email,
-			"image":        profile.ImageURL,
-			"access_token": token,
-			"expires_at":   decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
-		})
-	} else {
-		c.JSON(http.StatusForbidden, gin.H{})
+		return
 	}
+
+	token := handler.jwtService.GenerateToken(user.Id.String(), user.Name, user.Email)
+	if err := handler.userRepo.UpdateOne(user.Id.String(), "token", token); err != nil {
+		c.JSON(http.StatusInternalServerError, pkg.BuildWithoutResponse(http.StatusInternalServerError, err.Error()))
+		c.Abort()
+
+		return
+	}
+
+	decode, errDecodeToken := handler.jwtService.ValidateToken(token)
+	if errDecodeToken != nil {
+		c.JSON(http.StatusInternalServerError, pkg.BuildWithoutResponse(http.StatusInternalServerError, errDecodeToken.Error()))
+		c.Abort()
+
+		return
+	}
+	profile, errGetProfile := handler.userRepo.GetProfile(user.Id.String())
+	if errGetProfile != nil {
+		c.JSON(http.StatusInternalServerError, pkg.BuildWithoutResponse(http.StatusInternalServerError, errGetProfile.Error()))
+		c.Abort()
+
+		return
+	}
+
+	c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, loginResponse{
+		Id:          profile.Id,
+		Name:        profile.Name,
+		Email:       profile.Email,
+		ImageURL:    profile.ImageURL,
+		AccessToken: token,
+		ExpiresAt:   decode.Claims.(*service.AuthCustomClaims).ExpiresAt,
+	}))
 
 }
 
