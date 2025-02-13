@@ -12,6 +12,8 @@ import (
 	"schedule_table/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jinzhu/copier"
 )
 
 var ErrRequestAuthorizationHeader = errors.New("request token in authorization header")
@@ -41,20 +43,25 @@ type SignUpBody struct {
 	Description string `json:"description"`
 }
 
+type SignUpUserResponse struct {
+	Id    uuid.UUID `json:"id"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+	Image string    `json:"image"`
+}
+
 func (handler *AuthHandlerImpl) SignUp(c *gin.Context) {
-	body := &SignUpBody{}
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+	var body SignUpBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, pkg.BuildWithoutResponse(http.StatusBadRequest, err.Error()))
+		c.Abort()
 
 		return
 	}
 
 	if !handler.userRepo.IsUniqueEmail(body.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": repository.ErrDuplicateEmail.Error(),
-		})
+		c.JSON(http.StatusBadRequest, pkg.BuildWithoutResponse(http.StatusBadRequest, repository.ErrDuplicateEmail.Error()))
+		c.Abort()
 
 		return
 	}
@@ -68,26 +75,23 @@ func (handler *AuthHandlerImpl) SignUp(c *gin.Context) {
 	}
 
 	if err := handler.userRepo.Register(newUser); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		c.JSON(http.StatusInternalServerError, pkg.BuildWithoutResponse(http.StatusInternalServerError, err.Error()))
+		c.Abort()
+
 		return
 	}
 
 	if _, err := handler.userRepo.CreateCalendarDefault(newUser.Id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		c.JSON(http.StatusInternalServerError, pkg.BuildWithoutResponse(http.StatusInternalServerError, err.Error()))
+		c.Abort()
+
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"id":    newUser.Id,
-		"name":  newUser.Name,
-		"email": newUser.Email,
-		"image": newUser.ImageURL,
-	})
+	resp := &SignUpUserResponse{}
+	copier.Copy(&resp, newUser)
 
+	c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, resp))
 }
 
 func (handler *AuthHandlerImpl) Login(c *gin.Context) {
