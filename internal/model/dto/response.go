@@ -110,35 +110,6 @@ type ResponseTask struct {
 	Description ResponseTaskDescription `json:"description"`
 }
 
-type ResponseUser struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Image string `json:"image"`
-}
-
-func (responseUser *ResponseUser) ImageURL(imageUrl string) {
-	responseUser.Image = imageUrl
-}
-
-type ResponseProfile struct {
-	Id          string  `json:"id"`
-	Name        string  `json:"name"`
-	Email       string  `json:"email"`
-	ImageURL    string  `json:"imageURL"`
-	Description string  `json:"description"`
-	CalendarId  *string `json:"calendar_id"`
-}
-
-func (responseProfile *ResponseProfile) Calendar(cal *dao.Calendars) {
-	if cal != nil {
-		id := cal.Id.String()
-		responseProfile.CalendarId = &id
-	} else {
-		responseProfile.CalendarId = nil
-	}
-}
-
 type Pagination struct {
 	Total       int64 `json:"total_records"`
 	CurrentPage int   `json:"current_page"`
@@ -146,6 +117,6 @@ type Pagination struct {
 }
 
 type ResponseMembersTable struct {
-	Data       *[]ResponseMember `json:"data"`
+	Data       []*ResponseMember `json:"data"`
 	Pagination *Pagination       `json:"pagination"`
 }

@@ -42,7 +42,7 @@ func getTokenFromHeader(c *gin.Context) (string, error) {
 type AuthHandler interface {
 	SignUp(c *gin.Context) (*signUpUserResponse, error)
 	Login(c *gin.Context) (*loginResponse, error)
-	Profile(c *gin.Context) (*profileResponse, error)
+	GetProfile(c *gin.Context) (*profileResponse, error)
 }
 
 // authHandler handles authentication-related requests such as login, sign-up, and profile retrieval.
@@ -181,7 +181,7 @@ func (handler *authHandler) Login(c *gin.Context) (*loginResponse, error) {
 
 }
 
-func (handler *authHandler) Profile(c *gin.Context) (*profileResponse, error) {
+func (handler *authHandler) GetProfile(c *gin.Context) (*profileResponse, error) {
 
 	tokenString, errGetToken := getTokenFromHeader(c)
 	if errGetToken != nil {

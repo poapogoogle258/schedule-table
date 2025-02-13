@@ -2,11 +2,11 @@ package handler
 
 import (
 	"errors"
+	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
 	"schedule_table/internal/repository"
-	"schedule_table/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,30 +14,33 @@ import (
 )
 
 type ScheduleHandler interface {
-	GetSchedules(c *gin.Context) (*[]dto.ResponseSchedule, error)
+	GetSchedules(c *gin.Context) ([]*dto.ResponseSchedule, error)
 	GetScheduleId(c *gin.Context) (*dto.ResponseSchedule, error)
 	CreateNewSchedule(c *gin.Context) (*dto.ResponseSchedule, error)
 	UpdateSchedule(c *gin.Context) (*dto.ResponseSchedule, error)
 	DeleteSchedule(c *gin.Context) error
-	GetResponsible(c *gin.Context) (*[]dto.ResponseMember, error)
+	GetResponsible(c *gin.Context) ([]*dto.ResponseMember, error)
 }
 
 type scheduleHandler struct {
 	scheduleRepo repository.ScheduleRepository
 }
 
-func (scheHandler *scheduleHandler) GetResponsible(c *gin.Context) (*[]dto.ResponseMember, error) {
+func (scheHandler *scheduleHandler) GetResponsible(c *gin.Context) ([]*dto.ResponseMember, error) {
 	scheduleId := c.Param("scheduleId")
 
-	if members, err := scheHandler.scheduleRepo.GetMembersResponsible(scheduleId); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(500, err)
-	} else {
-		return util.Convert[[]dto.ResponseMember](members), nil
+	members, errGetMembersResponsible := scheHandler.scheduleRepo.GetMembersResponsible(scheduleId)
+	if errGetMembersResponsible != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errGetMembersResponsible)
 	}
 
+	resp := []*dto.ResponseMember{}
+	copier.Copy(&resp, members)
+
+	return resp, nil
 }
 
-func (scheHandler *scheduleHandler) GetSchedules(c *gin.Context) (*[]dto.ResponseSchedule, error) {
+func (scheHandler *scheduleHandler) GetSchedules(c *gin.Context) ([]*dto.ResponseSchedule, error) {
 	calendarId := c.Param("calendarId")
 
 	result, err := scheHandler.scheduleRepo.GetSchedulesCalendar(calendarId)
@@ -45,7 +48,7 @@ func (scheHandler *scheduleHandler) GetSchedules(c *gin.Context) (*[]dto.Respons
 		return nil, err
 	}
 
-	response := &[]dto.ResponseSchedule{}
+	response := []*dto.ResponseSchedule{}
 	if err := copier.Copy(&response, &result); err != nil {
 		return nil, err
 	}

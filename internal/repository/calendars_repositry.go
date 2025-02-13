@@ -15,10 +15,10 @@ var (
 )
 
 type CalendarRepository interface {
-	FindMembersOfCalendarId(calendarId string) (*[]dao.Members, error)
+	FindMembersOfCalendarId(calendarId string) ([]*dao.Members, error)
 	FindLeavesOfCalendarId(calendarId string, start *time.Time, end *time.Time) (*[]dao.Leaves, error)
 	IsOwnerOfCalendar(userId string, calendarId string) bool
-	FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error)
+	FindByOwnerId(ownerId string) ([]*dto.ResponseCalendar, error)
 	CheckExist(calendarId string) error
 	FindOneWithAssociation(calendarId string, start time.Time, end time.Time) (*dao.Calendars, error)
 	UpdateLastTimeGenerated(calendarId string) error
@@ -77,8 +77,8 @@ func (calRepo *calendarRepository) UpdateLastTimeGenerated(calendarId string) er
 	return nil
 }
 
-func (calRepo *calendarRepository) FindByOwnerId(ownerId string) (*[]dto.ResponseCalendar, error) {
-	var calendars *[]dto.ResponseCalendar
+func (calRepo *calendarRepository) FindByOwnerId(ownerId string) ([]*dto.ResponseCalendar, error) {
+	var calendars []*dto.ResponseCalendar
 
 	if err := calRepo.db.Model(&dao.Calendars{}).Find(&calendars, "user_id = ?", ownerId).Error; err != nil {
 		return nil, err
@@ -108,8 +108,8 @@ func (calRepo *calendarRepository) FindLeavesOfCalendarId(calendarId string, sta
 	return leaves, nil
 }
 
-func (calRepo *calendarRepository) FindMembersOfCalendarId(calendarId string) (*[]dao.Members, error) {
-	var members *[]dao.Members
+func (calRepo *calendarRepository) FindMembersOfCalendarId(calendarId string) ([]*dao.Members, error) {
+	var members []*dao.Members
 	if err := calRepo.db.Preload("Leaves").Find(&members, "calendar_id = ?", calendarId).Error; err != nil {
 		return nil, err
 	}

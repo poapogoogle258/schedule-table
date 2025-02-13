@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
@@ -10,6 +11,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jinzhu/copier"
+)
+
+var (
+	ErrNotFountPagination = errors.New("pagination mush have page and limit in query string or all=true")
 )
 
 type MemberHandler interface {
@@ -25,60 +31,53 @@ type memberHandler struct {
 	calRepo    repository.CalendarRepository
 }
 
-type QueryStringGetMembers struct {
-	Page  int  `form:"page"`
-	Limit int  `form:"limit"`
-	All   bool `form:"all"`
+type queryStringGetMembers struct {
+	Page  *int  `form:"page"`
+	Limit *int  `form:"limit"`
+	All   *bool `form:"all"`
 }
 
 func (mh *memberHandler) GetMembers(c *gin.Context) (*dto.ResponseMembersTable, error) {
-	var query QueryStringGetMembers
-	if err := c.ShouldBindQuery(&query); err != nil {
-		return nil, err
-	}
-
 	calendarId := c.Param("calendarId")
-	if err := mh.calRepo.CheckExist(calendarId); err != nil {
-		return nil, err
+
+	var query queryStringGetMembers
+	if err := c.ShouldBindQuery(&query); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	if query.All {
-		result, err := mh.memberRepo.Find(map[string]interface{}{
-			"calendar_id": calendarId,
-		})
-		if err != nil {
-			return nil, err
+	resp := []*dto.ResponseMember{}
+	pagination := dto.Pagination{}
+
+	if query.All != nil && *query.All {
+		members, errFindMember := mh.memberRepo.Find("calendar_id = ?", calendarId)
+		if errFindMember != nil {
+			return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errFindMember)
 		}
 
-		response := util.Convert[[]dto.ResponseMember](&result)
-
-		return &dto.ResponseMembersTable{
-			Data: response,
-			Pagination: &dto.Pagination{
-				Total: int64(len(*response)),
-			},
-		}, nil
+		copier.Copy(&resp, members)
+		pagination.CurrentPage = 1
+		pagination.Limit = len(resp)
+		pagination.Total = int64(len(resp))
 
 	} else {
-		result, err := mh.memberRepo.FindWithOffsetAndLimit((query.Page-1)*query.Limit, query.Limit, map[string]interface{}{
-			"calendar_id": calendarId,
-		})
-		if err != nil {
-			return nil, err
+		if query.Page == nil || query.Limit == nil {
+			return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrNotFountPagination)
 		}
 
-		response := util.Convert[[]dto.ResponseMember](&result)
-		totalMember := mh.memberRepo.Count(calendarId)
+		offset := (*query.Page - 1) * *query.Limit
+		limit := *query.Limit
+		members, errFindWithOffsetAndLimit := mh.memberRepo.FindWithOffsetAndLimit(offset, limit, "calendar_id = ?", calendarId)
+		if errFindWithOffsetAndLimit != nil {
+			return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errFindWithOffsetAndLimit)
+		}
 
-		return &dto.ResponseMembersTable{
-			Data: response,
-			Pagination: &dto.Pagination{
-				CurrentPage: query.Page,
-				Limit:       query.Limit,
-				Total:       totalMember,
-			},
-		}, nil
+		copier.Copy(&resp, members)
+		pagination.CurrentPage = *query.Page
+		pagination.Limit = limit
+		pagination.Total = mh.memberRepo.Count(calendarId)
 	}
+
+	return &dto.ResponseMembersTable{Data: resp, Pagination: &pagination}, nil
 
 }
 
@@ -87,27 +86,26 @@ func (mh *memberHandler) GetMemberId(c *gin.Context) (*dto.ResponseMember, error
 	calendarId := c.Param("calendarId")
 	memberId := c.Param("memberId")
 
-	result, err := mh.memberRepo.FindOne(map[string]interface{}{
-		"id":          memberId,
-		"calendar_id": calendarId,
-	})
-
-	if err != nil {
-		return nil, err
+	member, errFindOne := mh.memberRepo.FindOne("id = ? AND calendar_id = ?", memberId, calendarId)
+	if errFindOne != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errFindOne)
 	}
 
-	response := util.Convert[dto.ResponseMember](&result)
+	resp := dto.ResponseMember{}
+	copier.Copy(&resp, member)
 
-	return response, nil
+	return &resp, nil
 }
 
 func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, error) {
 
 	calendarId := c.Param("calendarId")
+
 	var req dto.RequestCreateNewMember
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
@@ -116,7 +114,7 @@ func (mh *memberHandler) CreateNewMember(c *gin.Context) (*dto.ResponseMember, e
 	insert.CalendarId = uuid.MustParse(calendarId)
 
 	if err := mh.memberRepo.Create(insert); err != nil {
-		return nil, err
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, err)
 	}
 
 	response := util.Convert[dto.ResponseMember](&insert)
