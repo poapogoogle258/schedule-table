@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"schedule_table/internal/model/dao"
-	"schedule_table/util"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -13,7 +12,7 @@ import (
 type UserRepository interface {
 	FindOne(userId string) (*dao.Users, error)
 	FindOneByEmail(email string) (*dao.Users, error)
-	Register(insert *dao.Users) error
+	Create(insert *dao.Users) error
 	CreateCalendarDefault(userId uuid.UUID) (*dao.Calendars, error)
 	UpdateOne(userId string, column string, value any) error
 	IsUniqueEmail(email string) bool
@@ -63,14 +62,7 @@ func (userRepo *userRepository) CreateCalendarDefault(userId uuid.UUID) (*dao.Ca
 
 }
 
-func (userRepo *userRepository) Register(insert *dao.Users) error {
-
-	// hast password
-	insert.Password = util.HashPassword(insert.Password)
-
-	// set userId
-	insert.Id = uuid.New()
-
+func (userRepo *userRepository) Create(insert *dao.Users) error {
 	return userRepo.db.Create(insert).Error
 }
 

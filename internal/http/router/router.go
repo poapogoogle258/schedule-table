@@ -47,9 +47,9 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 
 	auth := router.Group("/auth")
 	{
-		auth.POST("/login", handlers.Auth.Login)
-		auth.POST("/signup", handlers.Auth.SignUp)
-		auth.GET("/profile", handlers.Auth.Profile)
+		auth.GET("/profile", pkg.BuildGetController(handlers.Auth.Profile))
+		auth.POST("/login", pkg.BuildGetController(handlers.Auth.Login))
+		auth.POST("/signup", pkg.BuildPostController(handlers.Auth.SignUp))
 	}
 
 	api := router.Group("/api")
