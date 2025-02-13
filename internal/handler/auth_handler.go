@@ -20,11 +20,11 @@ var (
 	ErrRequestAuthorizationHeader = errors.New("request token in authorization header")
 	ErrAuthEmailInvalid           = errors.New("email invalid")
 	ErrAuthPasswordInvalid        = errors.New("password invalid")
+	ErrAuthTokenInvalid           = errors.New("token invalid")
 )
 
 type AuthHandler interface {
 	Login(c *gin.Context)
-	ValidateToken(c *gin.Context)
 	Profile(c *gin.Context)
 	SignUp(c *gin.Context)
 }
@@ -176,51 +176,24 @@ func (handler *AuthHandlerImpl) Profile(c *gin.Context) {
 		return
 	}
 
-	if token, err := handler.jwtService.ValidateToken(tokenString); err == nil {
-		claims := token.Claims.(*service.AuthCustomClaims)
-
-		if profile, err := handler.userRepo.GetProfile(claims.UserId); err != nil {
-			c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, err.Error()))
-			return
-		} else {
-			response := util.Convert[dto.ResponseProfile](&profile)
-			c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, response))
-			return
-		}
-	} else {
-		c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, "token invalid"))
-	}
-}
-
-func (s *AuthHandlerImpl) ValidateToken(c *gin.Context) {
-
-	tokenString, errGetToken := getTokenFromHeader(c)
-	if errGetToken != nil {
-		c.JSON(http.StatusUnauthorized, pkg.BuildWithoutResponse(http.StatusUnauthorized, errGetToken.Error()))
+	token, errValidateToken := handler.jwtService.ValidateToken(tokenString)
+	if errValidateToken != nil {
+		c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, ErrAuthTokenInvalid.Error()))
 		c.Abort()
 
 		return
 	}
 
-	token, err := s.jwtService.ValidateToken(tokenString)
+	claims := token.Claims.(*service.AuthCustomClaims)
+	if profile, errGetProfile := handler.userRepo.GetProfile(claims.UserId); errGetProfile != nil {
+		c.JSON(http.StatusForbidden, pkg.BuildWithoutResponse(http.StatusForbidden, errGetProfile.Error()))
+		c.Abort()
 
-	if token.Valid {
-		claims := token.Claims.(*service.AuthCustomClaims)
-
-		c.JSON(http.StatusOK, gin.H{
-			"statusCode": http.StatusOK,
-			"message":    "success",
-			"data":       claims,
-		})
-
+		return
 	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"statusCode": http.StatusUnauthorized,
-			"message":    err.Error(),
-		})
-
+		response := util.Convert[dto.ResponseProfile](&profile)
+		c.JSON(http.StatusOK, pkg.BuildResponse(http.StatusOK, response))
 	}
-
 }
 
 func getTokenFromHeader(c *gin.Context) (string, error) {
