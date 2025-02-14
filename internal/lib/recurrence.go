@@ -76,7 +76,8 @@ func CreateRecurrenceTasks(schedule *dao.Schedules, start time.Time, end time.Ti
 			tasksStart := recurrenceSchedule[i]
 			tasksEnd := recurrenceSchedule[i].Add(duration)
 			resttime := tasksEnd.Add(time.Duration(schedule.BreakTime) * time.Minute)
-			recurrenceId := fmt.Sprint(schedule.Id.String(), "-", tasksStart.Format(time.DateOnly), "#", number)
+
+			recurrenceId := fmt.Sprint(schedule.Id.String(), "-", tasksStart.UTC().Format(time.DateOnly), "#", number)
 
 			tasks = append(tasks, &dao.Tasks{
 				Id:           uuid.New(),

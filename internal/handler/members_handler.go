@@ -126,6 +126,7 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 
 	calendarId := c.Param("calendarId")
 	memberId := c.Param("memberId")
+
 	var req dto.RequestCreateNewMember
 	if err := c.ShouldBind(&req); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
@@ -136,15 +137,20 @@ func (mh *memberHandler) EditMember(c *gin.Context) (*dto.ResponseMember, error)
 
 	data := util.Convert[dao.Members](&req)
 
-	if result, err := mh.memberRepo.UpdatesAndFindOne(memberId, calendarId, data); err != nil {
-		return nil, err
-	} else {
-		response := util.Convert[dto.ResponseMember](&result)
-		return response, nil
+	member, errUpdatesAndFindOne := mh.memberRepo.UpdatesAndFindOne(memberId, calendarId, data)
+	if errUpdatesAndFindOne != nil {
+		return nil, errUpdatesAndFindOne
 	}
+
+	resp := dto.ResponseMember{}
+	copier.Copy(&resp, member)
+
+	return &resp, nil
+
 }
 
 func (mh *memberHandler) DeleteMemberId(c *gin.Context) error {
+
 	calendarId := c.Param("calendarId")
 	memberId := c.Param("memberId")
 

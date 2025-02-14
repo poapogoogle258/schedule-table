@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"schedule_table/internal/model/dao"
 	"schedule_table/internal/model/dto"
@@ -43,15 +42,13 @@ func (scheHandler *scheduleHandler) GetResponsible(c *gin.Context) ([]*dto.Respo
 func (scheHandler *scheduleHandler) GetSchedules(c *gin.Context) ([]*dto.ResponseSchedule, error) {
 	calendarId := c.Param("calendarId")
 
-	result, err := scheHandler.scheduleRepo.GetSchedulesCalendar(calendarId)
-	if err != nil {
-		return nil, err
+	schedules, errGetSchedulesCalendar := scheHandler.scheduleRepo.GetSchedulesCalendar(calendarId)
+	if errGetSchedulesCalendar != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errGetSchedulesCalendar)
 	}
 
 	response := []*dto.ResponseSchedule{}
-	if err := copier.Copy(&response, &result); err != nil {
-		return nil, err
-	}
+	copier.Copy(&response, schedules)
 
 	return response, nil
 }
@@ -60,75 +57,69 @@ func (scheHandler *scheduleHandler) GetScheduleId(c *gin.Context) (*dto.Response
 	calendarId := c.Param("calendarId")
 	scheduleId := c.Param("scheduleId")
 
-	result, err := scheHandler.scheduleRepo.GetScheduleCalendarId(calendarId, scheduleId)
-	if err != nil {
-		return nil, err
+	schedule, errGetScheduleCalendarId := scheHandler.scheduleRepo.GetScheduleCalendarId(calendarId, scheduleId)
+	if errGetScheduleCalendarId != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errGetScheduleCalendarId)
+
 	}
 
-	response := &dto.ResponseSchedule{}
-	if err := copier.Copy(&response, &result); err != nil {
-		return nil, err
-	}
+	resp := dto.ResponseSchedule{}
+	copier.Copy(&resp, schedule)
 
-	return response, nil
+	return &resp, nil
 
 }
 
 func (scheHandler *scheduleHandler) CreateNewSchedule(c *gin.Context) (*dto.ResponseSchedule, error) {
 	calendarId := c.Param("calendarId")
-	var req *dto.RequestSchedule
-	if err := c.ShouldBind(&req); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(400, errors.New("bad request"))
+
+	var req dto.RequestSchedule
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
 	// TODO : Validate request
 
-	insert := &dao.Schedules{}
+	insert := dao.Schedules{}
 	insert.CalendarId = uuid.MustParse(calendarId)
 	if err := copier.Copy(&insert, &req); err != nil {
 		return nil, err
 	}
 
-	result, err := scheHandler.scheduleRepo.CreateNewSchedule(insert)
-	if err != nil {
-		return nil, err
+	newSchedule, errCreateNewSchedule := scheHandler.scheduleRepo.CreateNewSchedule(&insert)
+	if errCreateNewSchedule != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errCreateNewSchedule)
 	}
 
-	response := &dto.ResponseSchedule{}
-	if err := copier.Copy(&response, &result); err != nil {
-		return nil, err
-	}
+	resp := dto.ResponseSchedule{}
+	copier.Copy(&resp, newSchedule)
 
-	return response, nil
+	return &resp, nil
 
 }
 
 func (scheHandler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ResponseSchedule, error) {
 	scheduleId := c.Param("scheduleId")
 
-	var req *dto.RequestSchedule
-	if err := c.ShouldBind(&req); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(400, err)
+	var req dto.RequestSchedule
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
 	// TODO : Validate request
 
-	insert := &dao.Schedules{}
-	if err := copier.Copy(&insert, &req); err != nil {
-		return nil, err
+	insert := dao.Schedules{}
+	copier.Copy(&insert, req)
+
+	schedule, errUpdateSchedule := scheHandler.scheduleRepo.UpdateSchedule(scheduleId, &insert)
+	if errUpdateSchedule != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusInternalServerError, errUpdateSchedule)
 	}
 
-	result, err := scheHandler.scheduleRepo.UpdateSchedule(scheduleId, insert)
-	if err != nil {
-		return nil, err
-	}
+	response := dto.ResponseSchedule{}
+	copier.Copy(&response, schedule)
 
-	response := &dto.ResponseSchedule{}
-	if err := copier.Copy(&response, &result); err != nil {
-		return nil, err
-	}
-
-	return response, nil
+	return &response, nil
 
 }
 
