@@ -56,6 +56,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 	api.Use(handlers.AuthJWTMiddle.Authorize())
 
 	{
+		api.GET("/calendars", pkg.BuildGetController(handlers.Calendar.GetMyCalendar))
 		calendar := api.Group("/calendars/:calendarId")
 
 		{

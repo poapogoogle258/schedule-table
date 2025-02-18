@@ -27,7 +27,7 @@ type Schedules struct {
 	Recurrence_count     int32          `gorm:"column:recurrence_count" json:"recurrence_count"`
 	Recurrence_bymonth   string         `gorm:"column:recurrence_bymonth" json:"recurrence_bymonth"`
 	Recurrence_byweekday string         `gorm:"column:recurrence_byweekday" json:"recurrence_byweekday"`
-	Responsibles         *[]Responsible `gorm:"foreignKey:schedule_id;" json:"Responsibles"`
+	Responsibles         []*Responsible `gorm:"foreignKey:schedule_id;" json:"Responsibles"`
 	CreatedAt            time.Time      `gorm:"index;column:created_at" json:"-"`
 	UpdatedAt            time.Time      `gorm:"index;column:updated_at" json:"-"`
 }
@@ -55,23 +55,10 @@ func (schedule *Schedules) BeforeDelete(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// ------------------------- updated_recurrence ----------------------------------------------
+func (schedule *Schedules) AfterSave(tx *gorm.DB) error {
+	if tx.Statement.Changed("Priority", "Start", "End", "Hr_start", "Hr_end", "Tzid", "BreakTime", "Recurrence_freq", "Recurrence_interval", "Recurrence_count", "Recurrence_bymonth", "Recurrence_byweekday", "Responsibles") {
+		tx.Model(&Calendars{}).Where("id = ?", schedule.CalendarId).Update("schedule_changed_at", time.Now())
+	}
 
-func (schedule *Schedules) AfterCreate(tx *gorm.DB) (err error) {
-	return tx.Model(&Calendars{}).Where("id = ?", schedule.CalendarId.String()).Update("updated_recurrence", time.Now()).Error
+	return nil
 }
-
-func (schedule *Schedules) AfterSave(tx *gorm.DB) (err error) {
-	return tx.Model(&Calendars{}).Where("id = ?", schedule.CalendarId.String()).Update("updated_recurrence", time.Now()).Error
-}
-
-func (schedule *Schedules) AfterUpdate(tx *gorm.DB) (err error) {
-	return tx.Model(&Calendars{}).Where("id = ?", schedule.CalendarId.String()).Update("updated_recurrence", time.Now()).Error
-}
-
-func (schedule *Schedules) AfterDelete(tx *gorm.DB) (err error) {
-	return tx.Model(&Calendars{}).Where("id = ?", schedule.CalendarId.String()).Update("updated_recurrence", time.Now()).Error
-
-}
-
-// ------------------------- end: updated_recurrence ----------------------------------------------

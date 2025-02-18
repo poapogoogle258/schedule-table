@@ -1,0 +1,9 @@
+[
+    {
+        "id" : "18668f63-4db5-4648-a387-c69516541a1b",
+        "name" : "user_testing",
+        "imageURl" : "http://localhost:8080/upload/default-member-profile.jpeg",
+        "email" : "user_testing@gmail.com",
+        "password" : "admin123456"
+    }
+]

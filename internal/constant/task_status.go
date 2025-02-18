@@ -28,10 +28,10 @@ func (status TaskStatus) ToString() string {
 
 var ErrTaskStatusNotExist = errors.New("task status not exist")
 
-func NewTaskStatus(status int8) (TaskStatus, error) {
+func ParseTaskStatus(status int8) (TaskStatus, error) {
 	if status == 0 || status == 1 || status == 2 || status == 3 {
 		return TaskStatus(status), nil
 	}
 
-	return TaskStatus(0), ErrTaskStatusNotExist
+	return 0, ErrTaskStatusNotExist
 }

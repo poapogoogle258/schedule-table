@@ -17,7 +17,7 @@ type Members struct {
 	Position    string    `gorm:"column:position" json:"position"`
 	Email       string    `gorm:"column:email" json:"email"`
 	Telephone   string    `gorm:"column:telephone" json:"telephone"`
-	Leaves      []Leaves  `gorm:"foreignKey:member_id" json:"leaves"`
+	Leaves      []*Leaves `gorm:"foreignKey:member_id" json:"leaves"`
 	BaseModel
 }
 

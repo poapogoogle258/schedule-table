@@ -10,44 +10,25 @@ import (
 	"schedule_table/internal/http/router"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
+	worker "schedule_table/internal/workers/task"
 
 	"github.com/google/wire"
 )
 
 var (
-	calendarSet = wire.NewSet(
-		handler.NewCalendarsHandler,
+	repositorySet = wire.NewSet(
 		repository.NewCalendarRepository,
-	)
-
-	jwtAuthSet = wire.NewSet(
-		service.NewJWTAuthService,
-	)
-
-	authSet = wire.NewSet(
-		handler.NewAuthHandler,
+		repository.NewLeaveRepository,
+		repository.NewMemberRepository,
+		repository.NewScheduleRepository,
+		repository.NewTaskRepository,
 		repository.NewUserRepository,
 	)
 
-	memberSet = wire.NewSet(
-		handler.NewMemberHandler,
-		repository.NewMemberRepository,
+	serviceSet = wire.NewSet(
+		service.NewJWTAuthService,
+		service.NewTaskService,
 	)
-
-	scheduleSet = wire.NewSet(
-		handler.NewScheduleHandler,
-		repository.NewScheduleRepository,
-	)
-
-	taskSet = wire.NewSet(
-		handler.NewTasksHandler,
-		repository.NewTaskRepository,
-	)
-
-	// leaveSet = wire.NewSet(
-	// 	handler.NewLeaveHandler,
-	// 	repository.NewLeaveRepository,
-	// )
 
 	middlewareSet = wire.NewSet(
 		middleware.NewAuthorizeJWTMiddleware,
@@ -56,13 +37,32 @@ var (
 		middleware.NewScheduleMiddleware,
 		middleware.NewTaskMiddleware,
 	)
+
+	handlerSet = wire.NewSet(
+		handler.NewAuthHandler,
+		handler.NewCalendarsHandler,
+		handler.NewLeaveHandler,
+		handler.NewScheduleHandler,
+		handler.NewMemberHandler,
+		handler.NewTasksHandler,
+	)
 )
 
 func Injector() *router.Handlers {
 
-	wire.Build(middlewareSet, jwtAuthSet, taskSet, scheduleSet, memberSet, calendarSet, authSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
+	wire.Build(repositorySet, handlerSet, serviceSet, middlewareSet, database.ConnectPostgresql, wire.Struct(new(router.Handlers), "*"))
 
 	return &router.Handlers{}
+
+	// return &router.Handlers{}, &repository.CalendarRepository{}, &repository.ITaskRepository{}, &repository.ScheduleRepository{}, &repository.MembersRepository{}
+
+}
+
+func InjectorWorker() *worker.WorkerInit {
+
+	wire.Build(repositorySet, database.ConnectPostgresql, wire.Struct(new(worker.WorkerInit), "*"))
+
+	return &worker.WorkerInit{}
 
 }
 

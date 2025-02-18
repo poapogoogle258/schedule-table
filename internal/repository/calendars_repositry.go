@@ -21,10 +21,12 @@ type CalendarRepository interface {
 	FindByOwnerId(ownerId string) ([]*dto.ResponseCalendar, error)
 	CheckExist(calendarId string) error
 	FindOneWithAssociation(calendarId string, start time.Time, end time.Time) (*dao.Calendars, error)
-	UpdateLastTimeGenerated(calendarId string) error
-	CheckRecurrenceChanged(calendarId string) bool
 	GetDefaultCalendarUser(userId string) (string, error)
 	IsExist(calendarId string) bool
+	GetListIdOfScheduleChanged() ([]string, error)
+	UpdateScheduleChanged(calendarId string, updateAt time.Time) error
+	UpdateTaskGenerated(calendarId string, updateAt time.Time) error
+	GetLastTimeGeneratedTask(calendarId string) (*time.Time, error)
 }
 
 type calendarRepository struct {
@@ -32,16 +34,17 @@ type calendarRepository struct {
 }
 
 func (calRepo *calendarRepository) GetDefaultCalendarUser(userId string) (string, error) {
+
 	var calendar *dao.Calendars
 	if err := calRepo.db.Select("user_id", "id").First(&calendar, "user_id = ?", userId).Error; err != nil {
 		return "", err
 	}
 
 	return calendar.Id.String(), nil
-
 }
 
 func (calRepo *calendarRepository) IsExist(calendarId string) bool {
+
 	var count int64
 	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Limit(1).Count(&count).Error; err != nil {
 		return false
@@ -50,31 +53,22 @@ func (calRepo *calendarRepository) IsExist(calendarId string) bool {
 	return count > 0
 }
 
-func (calRepo *calendarRepository) CheckRecurrenceChanged(calendarId string) bool {
+func (repo *calendarRepository) IsScheduleCalendarChanged(calendarId string) bool {
 
-	calendar := &dao.Calendars{}
-	if err := calRepo.db.Select("id", "updated_recurrence", "updated_generate_tasks").First(&calendar, "id = ?", calendarId).Error; err != nil {
+	var calendar *dao.Calendars
+	if err := repo.db.Select("id", "schedule_changed_at", "generate_task_updated_at").First(&calendar, "id = ?", calendarId).Error; err != nil {
 		return false
 	}
 
-	if calendar.LastTimeUpdatedGenerateTasks == nil || calendar.LastTimeUpdatedGenerateTasks.Before(calendar.LastTimeUpdatedRecurrence) {
-		return true
-	}
-
-	return false
-
+	return calendar.LastTimeGeneratedTask == nil || calendar.LastTimeGeneratedTask.Before(calendar.LastTimeScheduleChanged)
 }
 
-func (calRepo *calendarRepository) UpdateLastTimeGenerated(calendarId string) error {
-	if err := calRepo.CheckExist(calendarId); err != nil {
-		return err
-	}
+func (repo *calendarRepository) UpdateScheduleChanged(calendarId string, updateAt time.Time) error {
+	return repo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Update("schedule_changed_at", updateAt).Error
+}
 
-	if err := calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Update("updated_generate_tasks", time.Now()).Error; err != nil {
-		return err
-	}
-
-	return nil
+func (calRepo *calendarRepository) UpdateTaskGenerated(calendarId string, updateAt time.Time) error {
+	return calRepo.db.Model(&dao.Calendars{}).Where("id = ?", calendarId).Update("generate_task_updated_at", updateAt).Error
 }
 
 func (calRepo *calendarRepository) FindByOwnerId(ownerId string) ([]*dto.ResponseCalendar, error) {
@@ -149,6 +143,30 @@ func (calRepo *calendarRepository) FindOneWithAssociation(calendarId string, sta
 
 	return calendar, nil
 
+}
+
+func (repo *calendarRepository) GetListIdOfScheduleChanged() ([]string, error) {
+	var calendars []*dao.Calendars
+	if err := repo.db.Select("id", "schedule_changed_at", "generate_task_updated_at").Find(&calendars, "schedule_changed_at > generate_task_updated_at").Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]string, len(calendars))
+	for i := range calendars {
+		result[i] = calendars[i].Id.String()
+	}
+
+	return result, nil
+
+}
+
+func (repo *calendarRepository) GetLastTimeGeneratedTask(calendarId string) (*time.Time, error) {
+	var calendar *dao.Calendars
+	if err := repo.db.Select("id", "generate_task_updated_at").First(&calendar, "id = ?", calendarId).Error; err != nil {
+		return nil, err
+	}
+
+	return calendar.LastTimeGeneratedTask, nil
 }
 
 func NewCalendarRepository(db *gorm.DB) CalendarRepository {

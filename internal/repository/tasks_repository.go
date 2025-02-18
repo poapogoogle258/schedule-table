@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ITaskRepository interface {
@@ -17,6 +18,10 @@ type ITaskRepository interface {
 	UpdatesAndFind(taskId string, value interface{}) (*dao.Tasks, error)
 	DeleteOne(taskId uuid.UUID) error
 	IsExist(taskId string) bool
+	IsRecurrenceIdExist(recurrenceId string) bool
+
+	Upsert(tasks []*dao.Tasks) error
+	Delete(tasks []*dao.Tasks) error
 }
 
 type TaskRepository struct {
@@ -26,6 +31,19 @@ type TaskRepository struct {
 var (
 	ErrTaskNotExists = errors.New("task not exits")
 )
+
+func (taskRepo *TaskRepository) Delete(tasks []*dao.Tasks) error {
+
+	return taskRepo.db.Delete(&tasks).Error
+}
+
+func (taskRepo *TaskRepository) Upsert(tasks []*dao.Tasks) error {
+
+	return taskRepo.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}, {Name: "recurrence_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"start", "end", "status", "member_id"}),
+	}).Create(&tasks).Error
+}
 
 func (taskRepo *TaskRepository) First(conds ...interface{}) (*dao.Tasks, error) {
 	task := &dao.Tasks{}
@@ -45,6 +63,15 @@ func (taskRepo *TaskRepository) IsExist(taskId string) bool {
 	return count > 0
 }
 
+func (taskRepo *TaskRepository) IsRecurrenceIdExist(recurrenceId string) bool {
+	var count int64
+	if err := taskRepo.db.Model(&dao.Tasks{}).Where("recurrence_id = ?", recurrenceId).Limit(1).Count(&count).Error; err != nil {
+		return false
+	}
+
+	return count > 0
+}
+
 func (taskRepo *TaskRepository) FindWithAssociation(conds ...interface{}) ([]*dao.Tasks, error) {
 
 	tasks := []*dao.Tasks{}
@@ -58,8 +85,16 @@ func (taskRepo *TaskRepository) FindWithAssociation(conds ...interface{}) ([]*da
 
 func (taskRepo *TaskRepository) CreateTasks(insert []*dao.Tasks) error {
 
-	if err := taskRepo.db.Model(&dao.Tasks{}).Create(insert).Error; err != nil {
-		return err
+	for i := range insert {
+
+		var task dao.Tasks
+		if err := taskRepo.db.First(&task, "recurrence_id = ?", insert[i].RecurrenceId).Error; err != nil {
+			taskRepo.db.Model(&dao.Tasks{}).Create(insert[i])
+		}
+		// if err := .Error; err != nil {
+		// 	// return err
+
+		// }
 	}
 
 	return nil

@@ -1,0 +1,173 @@
+[
+    {
+        "id": "6d40c64a-a9f8-4427-af40-fda877944e11",
+        "master_id": "525f3410-e8a0-4b7e-9b92-5228e0270cdb",
+        "calendar_id": "1133272c-1fa9-4405-9425-754abc98bcc2",
+        "name": "เวรวันหยุด กะ เช้า",
+        "description": "วันเสาร์ - อาทิตย์ เวลา 08:00 - 16:00 น. จำนวน 2 คน",
+        "imageURL": "http://localhost:8080/upload/1739013270514566.jpeg",
+        "priority": 1,
+        "start": "2025-02-08T18:14:40+07:00",
+        "end": null,
+        "hr_start": "08:00",
+        "hr_end": "16:00",
+        "tzid": "Asia/Bangkok",
+        "breaktime": 0,
+        "use_number_people": 2,
+        "recurrence": {
+            "freq": 3,
+            "count": 0,
+            "interval": 1,
+            "byweekday": [
+                5,
+                6
+            ],
+            "bymonth": []
+        },
+        "members": null
+    },
+    {
+        "id": "525f3410-e8a0-4b7e-9b92-5228e0270cdb",
+        "master_id": null,
+        "calendar_id": "1133272c-1fa9-4405-9425-754abc98bcc2",
+        "name": "เวรวันหยุด กะ ดึก",
+        "description": "วันเสาร์ - อาทิตย์ เวลา 00:00 - 08:00 น. จำนวน 2 คน",
+        "imageURL": "http://localhost:8080/upload/1739013113131154.jpeg",
+        "priority": 1,
+        "start": "2025-02-08T18:13:29+07:00",
+        "end": null,
+        "hr_start": "00:00",
+        "hr_end": "08:00",
+        "tzid": "Asia/Bangkok",
+        "breaktime": 480,
+        "use_number_people": 2,
+        "recurrence": {
+            "freq": 3,
+            "count": 0,
+            "interval": 1,
+            "byweekday": [
+                5,
+                6
+            ],
+            "bymonth": []
+        },
+        "members": null
+    },
+    {
+        "id": "b80da226-d498-4d4b-b5ec-d274245b9511",
+        "master_id": "525f3410-e8a0-4b7e-9b92-5228e0270cdb",
+        "calendar_id": "1133272c-1fa9-4405-9425-754abc98bcc2",
+        "name": "เวรวันหยุด กะ บ่าย",
+        "description": "วันเสาร์ - อาทิตย์ เวลา 16:00 - 24:00 น. จำนวน 2 คน",
+        "imageURL": "http://localhost:8080/upload/1739013319086613.jpeg",
+        "priority": 1,
+        "start": "2025-02-08T18:15:53+07:00",
+        "end": null,
+        "hr_start": "16:00",
+        "hr_end": "00:00",
+        "tzid": "Asia/Bangkok",
+        "breaktime": 0,
+        "use_number_people": 2,
+        "recurrence": {
+            "freq": 3,
+            "count": 0,
+            "interval": 1,
+            "byweekday": [
+                5,
+                6
+            ],
+            "bymonth": []
+        },
+        "members": null
+    },
+    {
+        "id": "fca26656-2aa6-4029-a342-b911049f1cf6",
+        "master_id": "c18d02f8-1d33-4309-a86b-a34a70a120ab",
+        "calendar_id": "1133272c-1fa9-4405-9425-754abc98bcc2",
+        "name": "พยาบาลกะ บ่าย",
+        "description": "วันจันทร์ - ศุกย์ เวลา 16:00 - 24:00 น. จำนวน 3 คน",
+        "imageURL": "http://localhost:8080/upload/1739021410251589.jpeg",
+        "priority": 1,
+        "start": "2025-02-08T18:04:36+07:00",
+        "end": null,
+        "hr_start": "16:00",
+        "hr_end": "00:00",
+        "tzid": "Asia/Bangkok",
+        "breaktime": 480,
+        "use_number_people": 3,
+        "recurrence": {
+            "freq": 3,
+            "count": 0,
+            "interval": 1,
+            "byweekday": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "bymonth": []
+        },
+        "members": null
+    },
+    {
+        "id": "c18d02f8-1d33-4309-a86b-a34a70a120ab",
+        "master_id": null,
+        "calendar_id": "1133272c-1fa9-4405-9425-754abc98bcc2",
+        "name": "พยาบาลกะ ดึก",
+        "description": "วันจันทร์ - ศุกย์ เวลา 00:00 - 08:00 น. จำนวน 2 คน",
+        "imageURL": "http://localhost:8080/upload/1739021418374140.jpeg",
+        "priority": 1,
+        "start": "2025-02-08T00:00:00+07:00",
+        "end": null,
+        "hr_start": "00:00",
+        "hr_end": "08:00",
+        "tzid": "Asia/Bangkok",
+        "breaktime": 480,
+        "use_number_people": 2,
+        "recurrence": {
+            "freq": 3,
+            "count": 0,
+            "interval": 1,
+            "byweekday": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "bymonth": []
+        },
+        "members": null
+    },
+    {
+        "id": "d5f4725c-28db-4583-9c8a-64cc7cf27b4a",
+        "master_id": "c18d02f8-1d33-4309-a86b-a34a70a120ab",
+        "calendar_id": "1133272c-1fa9-4405-9425-754abc98bcc2",
+        "name": "พยาบาลกะ เช้า",
+        "description": "วันจันทร์ - ศุกย์ เวลา 08:00 - 16:00 น. จำนวน 3 คน",
+        "imageURL": "http://localhost:8080/upload/1739021424830611.jpeg",
+        "priority": 1,
+        "start": "2025-02-08T18:01:38+07:00",
+        "end": null,
+        "hr_start": "08:00",
+        "hr_end": "16:00",
+        "tzid": "Asia/Bangkok",
+        "breaktime": 480,
+        "use_number_people": 3,
+        "recurrence": {
+            "freq": 3,
+            "count": 0,
+            "interval": 1,
+            "byweekday": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "bymonth": []
+        },
+        "members": null
+    }
+]

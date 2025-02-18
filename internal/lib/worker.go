@@ -88,7 +88,7 @@ func (worker *Worker) AddReservedTask(task *dao.Tasks) error {
 
 func NewWorkerMember(member *dao.Members) IWorker {
 
-	leavesDays := util.Map(member.Leaves, func(leave dao.Leaves) time.Time {
+	leavesDays := util.Map(member.Leaves, func(leave *dao.Leaves) time.Time {
 		return leave.Date
 	})
 

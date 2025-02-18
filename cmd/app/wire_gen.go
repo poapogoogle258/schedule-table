@@ -14,6 +14,7 @@ import (
 	"schedule_table/internal/http/router"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
+	"schedule_table/internal/workers/task"
 )
 
 // Injectors from wire.go:
@@ -34,7 +35,8 @@ func Injector() *router.Handlers {
 	scheduleHandler := handler.NewScheduleHandler(scheduleRepository)
 	iScheduleMiddleware := middleware.NewScheduleMiddleware(scheduleRepository)
 	iTaskRepository := repository.NewTaskRepository(db)
-	tasksHandler := handler.NewTasksHandler(calendarRepository, iTaskRepository, scheduleRepository, membersRepository)
+	taskService := service.NewTaskService(iTaskRepository)
+	tasksHandler := handler.NewTasksHandler(taskService)
 	iTaskMiddleware := middleware.NewTaskMiddleware(iTaskRepository)
 	handlers := &router.Handlers{
 		Auth:           authHandler,
@@ -51,20 +53,29 @@ func Injector() *router.Handlers {
 	return handlers
 }
 
+func InjectorWorker() *worker.WorkerInit {
+	db := database.ConnectPostgresql()
+	calendarRepository := repository.NewCalendarRepository(db)
+	iTaskRepository := repository.NewTaskRepository(db)
+	scheduleRepository := repository.NewScheduleRepository(db)
+	membersRepository := repository.NewMemberRepository(db)
+	workerInit := &worker.WorkerInit{
+		CalRepo:      calendarRepository,
+		TaskRepo:     iTaskRepository,
+		ScheduleRepo: scheduleRepository,
+		MemberRepo:   membersRepository,
+	}
+	return workerInit
+}
+
 // wire.go:
 
 var (
-	calendarSet = wire.NewSet(handler.NewCalendarsHandler, repository.NewCalendarRepository)
+	repositorySet = wire.NewSet(repository.NewCalendarRepository, repository.NewLeaveRepository, repository.NewMemberRepository, repository.NewScheduleRepository, repository.NewTaskRepository, repository.NewUserRepository)
 
-	jwtAuthSet = wire.NewSet(service.NewJWTAuthService)
-
-	authSet = wire.NewSet(handler.NewAuthHandler, repository.NewUserRepository)
-
-	memberSet = wire.NewSet(handler.NewMemberHandler, repository.NewMemberRepository)
-
-	scheduleSet = wire.NewSet(handler.NewScheduleHandler, repository.NewScheduleRepository)
-
-	taskSet = wire.NewSet(handler.NewTasksHandler, repository.NewTaskRepository)
+	serviceSet = wire.NewSet(service.NewJWTAuthService, service.NewTaskService)
 
 	middlewareSet = wire.NewSet(middleware.NewAuthorizeJWTMiddleware, middleware.NewCalendarMiddleware, middleware.NewMemberMiddleware, middleware.NewScheduleMiddleware, middleware.NewTaskMiddleware)
+
+	handlerSet = wire.NewSet(handler.NewAuthHandler, handler.NewCalendarsHandler, handler.NewLeaveHandler, handler.NewScheduleHandler, handler.NewMemberHandler, handler.NewTasksHandler)
 )

@@ -1,0 +1,1 @@
+{"level":"error","ts":"2025-02-18T17:52:45.142+0700","msg":"ERROR: invalid input syntax for type uuid: \"test123\" (SQLSTATE 22P02)"}
