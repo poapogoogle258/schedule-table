@@ -55,7 +55,7 @@ func (schedule *Schedules) BeforeDelete(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (schedule *Schedules) AfterSave(tx *gorm.DB) error {
+func (schedule *Schedules) AfterUpdate(tx *gorm.DB) error {
 	if tx.Statement.Changed("Priority", "Start", "End", "Hr_start", "Hr_end", "Tzid", "BreakTime", "Recurrence_freq", "Recurrence_interval", "Recurrence_count", "Recurrence_bymonth", "Recurrence_byweekday", "Responsibles") {
 		tx.Model(&Calendars{}).Where("id = ?", schedule.CalendarId).Update("schedule_changed_at", time.Now())
 	}

@@ -21,19 +21,16 @@ func readFile(path string) []byte {
 }
 
 func main() {
-	godotenv.Load()
 
+	godotenv.Load("../../../.env")
 	db := database.ConnectPostgresql()
 	logger = zap.Must(zap.NewDevelopment())
 
-	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{CreateTable, UserInit})
+	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{CreateTable, UserInit, CalendarInit, MemberInit, ScheduleInit})
 
-	m.RollbackTo(CreateTable.ID)
-
-	// if err := m.Migrate(); err == nil {
-	// 	// logger.Fatal("Migration failed: %v", zap.Error(err))
-	// 	m.RollbackTo(CreateTable.ID)
-	// }
+	if err := m.Migrate(); err != nil {
+		logger.Fatal("Migration failed: %v", zap.Error(err))
+	}
 
 	logger.Info("Migration did run successfully")
 

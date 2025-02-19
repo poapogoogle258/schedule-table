@@ -2,8 +2,8 @@
     {
         "id": "1133272c-1fa9-4405-9425-754abc98bcc2",
         "name": "default",
-        "imageUrl": "http://localhost:8080/upload/default-member-profile.jpeg",
+        "imageURL": "http://localhost:8080/upload/default-member-profile.jpeg",
         "description": "",
-        "userId" : "18668f63-4db5-4648-a387-c69516541a1b"
+        "user_id" : "18668f63-4db5-4648-a387-c69516541a1b"
     }
 ]
