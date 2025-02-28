@@ -1,109 +1,115 @@
 package repository
 
 import (
-	"errors"
 	"schedule_table/internal/model/dao"
 
 	"github.com/google/uuid"
+	"golang.org/x/exp/maps"
 	"gorm.io/gorm"
 )
 
 type ScheduleRepository interface {
-	GetSchedulesCalendar(calendarId string) ([]*dao.Schedules, error)
-	GetScheduleCalendarId(calendarId string, scheduleId string) (*dao.Schedules, error)
-	CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error)
-	UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error)
-	Delete(scheduleId string) error
-	IsExist(scheduleId string) bool
-	GetMembersResponsible(scheduleId string) ([]*dao.Members, error)
+	Repository[*dao.Schedule]
+	UpdateEmployeeQueue(scheduleId string, employeeIds []string) error
+	FindOneWithAggregateEmployee(conds ...any) (*dao.Schedule, error)
+	FindManyWithAggregateEmployee(conds ...any) ([]*dao.Schedule, error)
+	InjectionTx(tx *gorm.DB) ScheduleRepository
 }
 
-var (
-	ErrScheduleNotExit = errors.New("schedule not exit")
-)
-
 type scheduleRepository struct {
+	Repository[*dao.Schedule]
 	db *gorm.DB
 }
 
-func (scheduleRepo *scheduleRepository) GetSchedulesCalendar(calendarId string) ([]*dao.Schedules, error) {
-	var schedules []*dao.Schedules
+func (repo *scheduleRepository) InjectionTx(tx *gorm.DB) ScheduleRepository {
+	return &scheduleRepository{
+		Repository: NewRepository[*dao.Schedule](tx),
+		db:         tx,
+	}
+}
 
-	// TODO: Order by Quese
-	selectedField := []string{"Id", "ImageURL", "Name", "Nickname", "Color", "Description", "Position", "Email", "Telephone"}
+func (repo *scheduleRepository) UpdateEmployeeQueue(scheduleId string, employeeIds []string) error {
 
-	if err := scheduleRepo.db.Model(&dao.Schedules{}).Preload("Responsibles.Person", scheduleRepo.db.Select(selectedField)).Find(&schedules, "calendar_id = ?", calendarId).Error; err != nil {
+	tx := repo.db.Begin()
+	tx.Rollback()
+
+	// delete old queue
+	if err := repo.db.Delete(&dao.EmployeeQueue{}, "schedule_id = ?", scheduleId).Error; err != nil {
+		return err
+	}
+	// create
+	insert := make([]*dao.EmployeeQueue, len(employeeIds))
+	for i, employeeId := range employeeIds {
+		insert[i] = &dao.EmployeeQueue{
+			ScheduleId: uuid.MustParse(scheduleId),
+			EmployeeId: uuid.MustParse(employeeId),
+			Queue:      int8(i + 1),
+		}
+	}
+
+	if err := repo.db.Create(insert).Error; err != nil {
+		return err
+	}
+
+	tx.Commit()
+	return nil
+
+}
+
+func (repo *scheduleRepository) FindOneWithAggregateEmployee(conds ...any) (*dao.Schedule, error) {
+
+	var schedule *dao.Schedule
+
+	if err := repo.db.First(&schedule, conds...).Error; err != nil {
 		return nil, err
+	}
+
+	var employees []*dao.EmployeeQueue
+
+	if err := repo.db.Joins("Person").Order("queue ASC").Find(&employees, "schedule_id = ?", schedule.MasterScheduleId).Error; err != nil {
+		return nil, err
+	}
+
+	schedule.EmployeeQueue = employees
+
+	return schedule, nil
+
+}
+
+func (repo *scheduleRepository) FindManyWithAggregateEmployee(conds ...any) ([]*dao.Schedule, error) {
+
+	var schedules []*dao.Schedule
+
+	if err := repo.db.Find(&schedules, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	var employees []*dao.EmployeeQueue
+	mapScheduleMasterIds := make(map[string]bool)
+	for _, schedule := range schedules {
+		mapScheduleMasterIds[schedule.MasterScheduleId.String()] = true
+	}
+
+	if err := repo.db.Joins("Person").Order("queue ASC").Find(&employees, "schedule_id in (?)", maps.Keys(mapScheduleMasterIds)).Error; err != nil {
+		return nil, err
+	}
+
+	groupByMasterId := make(map[uuid.UUID][]*dao.EmployeeQueue)
+	for i := range employees {
+		groupByMasterId[employees[i].ScheduleId] = append(groupByMasterId[employees[i].ScheduleId], employees[i])
+	}
+
+	for i := range schedules {
+		schedules[i].EmployeeQueue = groupByMasterId[schedules[i].MasterScheduleId]
 	}
 
 	return schedules, nil
-}
 
-func (scheduleRepo *scheduleRepository) GetScheduleCalendarId(calendarId string, scheduleId string) (*dao.Schedules, error) {
-	var schedule *dao.Schedules
-	if err := scheduleRepo.db.Model(&dao.Schedules{}).Preload("Responsibles.Person").First(&schedule, "id = ? AND calendar_id = ?", scheduleId, calendarId).Error; err != nil {
-		return nil, err
-	}
-
-	return schedule, nil
-}
-
-func (scheduleRepo *scheduleRepository) CreateNewSchedule(insert *dao.Schedules) (*dao.Schedules, error) {
-
-	if err := scheduleRepo.db.Create(&insert).Error; err != nil {
-		return nil, err
-	}
-
-	var schedule *dao.Schedules
-	if err := scheduleRepo.db.Model(&dao.Schedules{}).Preload("Responsibles.Person").First(&schedule, "id = ?", insert.Id).Error; err != nil {
-		return nil, err
-	}
-
-	return schedule, nil
-}
-
-func (scheduleRepo *scheduleRepository) UpdateSchedule(scheduleId string, insert *dao.Schedules) (*dao.Schedules, error) {
-
-	insert.Id = uuid.MustParse(scheduleId)
-
-	if err := scheduleRepo.db.Save(&insert).Error; err != nil {
-		return nil, err
-	}
-
-	var schedule *dao.Schedules
-	if err := scheduleRepo.db.Model(&dao.Schedules{}).Preload("Responsibles.Person").First(&schedule, "id = ?", scheduleId).Error; err != nil {
-		return nil, err
-	}
-
-	return schedule, nil
-
-}
-
-func (scheduleRepo *scheduleRepository) Delete(scheduleId string) error {
-	return scheduleRepo.db.Delete(&dao.Schedules{Id: uuid.MustParse(scheduleId)}).Error
-}
-
-func (scheduleRepo *scheduleRepository) IsExist(scheduleId string) bool {
-	var count int64
-	if err := scheduleRepo.db.Model(&dao.Schedules{}).Where("id = ?",
-		scheduleId).Count(&count).Error; err != nil {
-		panic(err)
-	}
-
-	return count > 0
-}
-
-func (scheduleRepo *scheduleRepository) GetMembersResponsible(scheduleId string) ([]*dao.Members, error) {
-	members := []*dao.Members{}
-	if err := scheduleRepo.db.Model(&dao.Members{}).Joins("JOIN responsibles re ON re.member_id = members.id AND re.schedule_id = ?", scheduleId).Find(&members).Error; err != nil {
-		return nil, err
-	}
-
-	return members, nil
 }
 
 func NewScheduleRepository(db *gorm.DB) ScheduleRepository {
 	return &scheduleRepository{
-		db: db,
+		db:         db,
+		Repository: NewRepository[*dao.Schedule](db),
 	}
 }

@@ -1,15 +1,10 @@
 package dto
 
 import (
-	"errors"
-	"regexp"
-	"schedule_table/internal/model/dao"
 	"schedule_table/util"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type RequestMember struct {
@@ -24,53 +19,21 @@ type RequestMember struct {
 	Telephone   string `json:"telephone"`
 }
 
-type RequestCreateNewMember struct {
-	Name        string `json:"name"`
-	NickName    string `json:"nickname"`
-	Color       string `json:"color"`
-	Description string `json:"description"`
-	Position    string `json:"position"`
-	Email       string `json:"email"`
-	Telephone   string `json:"telephone"`
-	ImageURL    string `json:"imageURL"`
-}
-
-func (newMember *RequestCreateNewMember) Validate() error {
-	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
-	if newMember.Email != "" && !emailRegex.MatchString(newMember.Email) {
-		return errors.New("field 'Email' format validate failed")
-	}
-
-	colorRegex := regexp.MustCompile(`^#[a-fA-F0-9]{6}$`)
-	if newMember.Color != "" && !colorRegex.MatchString(newMember.Color) {
-		return errors.New("field 'Color' format validate failed")
-	}
-
-	telephoneRegex := regexp.MustCompile(`^[0-9]{10}$`)
-	if newMember.Telephone != "" && !telephoneRegex.MatchString(newMember.Telephone) {
-		return errors.New("field 'Telephone' format validate failed")
-	}
-
-	// TODO: validate ImageURL
-
-	return nil
-}
-
 type RequestSchedule struct {
-	MasterScheduleId *string          `json:"master_id"`
-	Name             string           `json:"name"`
-	Description      string           `json:"description"`
-	ImageURL         string           `json:"imageURL"`
-	Priority         int8             `json:"priority"`
-	Start            time.Time        `json:"start"`
-	End              *time.Time       `json:"end"`
-	Hr_start         string           `json:"hr_start"`
-	Hr_end           string           `json:"hr_end"`
-	Tzid             string           `json:"tzid"`
-	BreakTime        uint32           `json:"breaktime"`
-	UseNumberPeople  int8             `json:"use_number_people"`
-	Recurrence       Recurrence       `json:"recurrence"`
-	Members          []ResponseMember `json:"members"`
+	MasterScheduleId *string    `json:"master_id"`
+	Name             string     `json:"name"`
+	Description      string     `json:"description"`
+	ImageURL         string     `json:"imageURL"`
+	Priority         int8       `json:"priority"`
+	Start            time.Time  `json:"start"`
+	End              *time.Time `json:"end"`
+	Hr_start         string     `json:"hr_start"`
+	Hr_end           string     `json:"hr_end"`
+	Tzid             string     `json:"tzid"`
+	BreakTime        uint32     `json:"breaktime"`
+	UseNumberPeople  int8       `json:"use_number_people"`
+	Recurrence       Recurrence `json:"recurrence"`
+	// Members          []ResponseMember `json:"members"`
 }
 
 func (reqSchedule *RequestSchedule) Validate() error {
@@ -104,19 +67,19 @@ func (reqSchedule *RequestSchedule) Recurrence_byweekday() string {
 	}
 }
 
-func (reqSchedule *RequestSchedule) Responsibles() *[]dao.Responsible {
+// func (reqSchedule *RequestSchedule) Responsibles() *[]dao.EmployeeQueue {
 
-	if reqSchedule.MasterScheduleId != nil {
-		return nil
-	}
+// 	if reqSchedule.MasterScheduleId != nil {
+// 		return nil
+// 	}
 
-	responsibles := make([]dao.Responsible, 0, len(reqSchedule.Members))
-	for i, member := range reqSchedule.Members {
-		responsibles = append(responsibles, dao.Responsible{
-			Queue:    int8(i),
-			MemberId: uuid.MustParse(member.Id),
-		})
-	}
-	return &responsibles
+// 	responsibles := make([]dao.EmployeeQueue, 0, len(reqSchedule.Members))
+// 	for i, member := range reqSchedule.Members {
+// 		responsibles = append(responsibles, dao.EmployeeQueue{
+// 			Queue:      int8(i),
+// 			EmployeeId: uuid.MustParse(member.Id),
+// 		})
+// 	}
+// 	return &responsibles
 
-}
+// }

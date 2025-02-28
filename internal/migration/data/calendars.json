@@ -1,0 +1,9 @@
+[
+    {
+        "id": "18668f63-4db5-4648-a387-c69516541a1b",
+        "name": "default",
+        "imageURL": "http://localhost:8080/upload/default-member-profile.jpeg",
+        "description": "",
+        "user_id" : "18668f63-4db5-4648-a387-c69516541a1b"
+    }
+]

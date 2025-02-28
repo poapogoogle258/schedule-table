@@ -5,22 +5,28 @@ import "errors"
 type TaskStatus int8
 
 const (
-	TaskStatus_Created TaskStatus = iota
-	TaskStatus_Submitted
-	TaskStatus_Reserved
-	TaskStatus_Canceled
+	TaskGenerated TaskStatus = iota
+	TaskCreated
+	TaskCommitted
+	TaskReserved
+	TaskOvertime
+	TaskCanceled
 )
 
 func (status TaskStatus) ToString() string {
 	switch status {
-	case TaskStatus_Created:
+	case TaskGenerated:
+		return "Generated"
+	case TaskCreated:
 		return "Created"
-	case TaskStatus_Submitted:
+	case TaskCommitted:
 		return "Submitted"
-	case TaskStatus_Reserved:
+	case TaskReserved:
 		return "Reserved"
-	case TaskStatus_Canceled:
-		return "Canceled"
+	case TaskOvertime:
+		return "Overtime"
+	case TaskCanceled:
+		return "Cancel"
 	default:
 		panic("Not Definition TaskStatus")
 	}

@@ -7,7 +7,10 @@ import (
 )
 
 type BaseModel struct {
-	CreatedAt time.Time      `gorm:"index;column:created_at" json:"-"`
-	UpdatedAt time.Time      `gorm:"index;column:updated_at" json:"-"`
+	CreatedAt time.Time `gorm:"index;column:created_at" json:"-"`
+	UpdatedAt time.Time `gorm:"index;column:updated_at" json:"-"`
+}
+
+type SoftDelete struct {
 	DeletedAt gorm.DeletedAt `gorm:"index;column:deleted_at" json:"-"`
 }

@@ -10,17 +10,12 @@ import (
 )
 
 type UserRepository interface {
-	FindOne(userId string) (*dao.Users, error)
-	FindOneByEmail(email string) (*dao.Users, error)
-	Create(insert *dao.Users) error
-	CreateCalendarDefault(userId uuid.UUID) (*dao.Calendars, error)
-	UpdateOne(userId string, column string, value any) error
-	IsUniqueEmail(email string) bool
-	GetTokenUser(userId string) (string, error)
-	GetProfile(userId string) (*dao.Users, error)
+	Repository[*dao.User]
+	InjectionTx(tx *gorm.DB) UserRepository
 }
 
 type userRepository struct {
+	Repository[*dao.User]
 	db *gorm.DB
 }
 
@@ -29,10 +24,18 @@ var (
 	ErrUserNotFound   = errors.New("not found user")
 )
 
-func (userRepo *userRepository) GetTokenUser(userId string) (string, error) {
-	var user *dao.Users
+func (userRepo *userRepository) InjectionTx(tx *gorm.DB) UserRepository {
 
-	result := userRepo.db.Model(&dao.Users{}).Select("id", "token").First(&user, "id = ?", userId)
+	return &userRepository{
+		db:         tx,
+		Repository: NewRepository[*dao.User](tx),
+	}
+}
+
+func (userRepo *userRepository) GetTokenUser(userId string) (string, error) {
+	var user *dao.User
+
+	result := userRepo.db.Model(&dao.User{}).Select("id", "token").First(&user, "id = ?", userId)
 
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -46,8 +49,8 @@ func (userRepo *userRepository) GetTokenUser(userId string) (string, error) {
 
 }
 
-func (userRepo *userRepository) CreateCalendarDefault(userId uuid.UUID) (*dao.Calendars, error) {
-	calendar := &dao.Calendars{
+func (userRepo *userRepository) CreateCalendarDefault(userId uuid.UUID) (*dao.Calendar, error) {
+	calendar := &dao.Calendar{
 		Id:       uuid.New(),
 		Name:     "default",
 		UserId:   userId,
@@ -62,43 +65,30 @@ func (userRepo *userRepository) CreateCalendarDefault(userId uuid.UUID) (*dao.Ca
 
 }
 
-func (userRepo *userRepository) Create(insert *dao.Users) error {
+func (userRepo *userRepository) Create(insert *dao.User) error {
 	return userRepo.db.Create(insert).Error
 }
 
 func (userRepo *userRepository) IsUniqueEmail(email string) bool {
 	var count int64
-	if err := userRepo.db.Model(&dao.Users{}).Limit(1).Where("email = ?", email).Count(&count).Error; err != nil {
+	if err := userRepo.db.Model(&dao.User{}).Limit(1).Where("email = ?", email).Count(&count).Error; err != nil {
 		return false
 	}
 
 	return count == 0
 }
 
-func (userRepo *userRepository) FindOne(userId string) (*dao.Users, error) {
-	var user *dao.Users
-	if err := userRepo.db.Find(&user, "id = ?", userId).Error; err != nil {
+func (userRepo *userRepository) FindOneByEmail(email string) (*dao.User, error) {
+	var user *dao.User
+	if err := userRepo.db.Model(&dao.User{}).Find(&user, "email = ?", email).Error; err != nil {
 		return nil, err
 	}
 
 	return user, nil
 }
 
-func (userRepo *userRepository) FindOneByEmail(email string) (*dao.Users, error) {
-	var user *dao.Users
-	if err := userRepo.db.Model(&dao.Users{}).Find(&user, "email = ?", email).Error; err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (userRepo *userRepository) UpdateOne(userId string, column string, value any) error {
-	return userRepo.db.Model(&dao.Users{}).Where("id = ?", userId).Update(column, value).Error
-}
-
-func (repo *userRepository) GetProfile(userId string) (*dao.Users, error) {
-	var user *dao.Users
+func (repo *userRepository) GetProfile(userId string) (*dao.User, error) {
+	var user *dao.User
 	if err := repo.db.Preload("Calendar").First(&user, "id = ?", userId).Error; err != nil {
 		return nil, err
 	}
@@ -107,7 +97,10 @@ func (repo *userRepository) GetProfile(userId string) (*dao.Users, error) {
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
+
 	return &userRepository{
-		db: db,
+		db:         db,
+		Repository: NewRepository[*dao.User](db),
 	}
+
 }

@@ -2,27 +2,27 @@ package handler
 
 import (
 	"schedule_table/internal/model/dto"
-	"schedule_table/internal/repository"
+	"schedule_table/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CalendarsHandler interface {
-	GetMyCalendar(c *gin.Context) ([]*dto.ResponseCalendar, error)
+	GetMyCalendar(c *gin.Context) ([]*dto.CalendarInfo, error)
 }
 
 type calendarsHandler struct {
-	calRepo repository.CalendarRepository
+	calService service.CalendarService
 }
 
-func (calHandler *calendarsHandler) GetMyCalendar(c *gin.Context) ([]*dto.ResponseCalendar, error) {
+func (handler *calendarsHandler) GetMyCalendar(c *gin.Context) ([]*dto.CalendarInfo, error) {
 	userId := c.GetString("authUserId")
 
-	return calHandler.calRepo.FindByOwnerId(userId)
+	return handler.calService.GetCalendarsOfUser(userId)
 }
 
-func NewCalendarsHandler(calRepo repository.CalendarRepository) CalendarsHandler {
+func NewCalendarsHandler(calendarService service.CalendarService) CalendarsHandler {
 	return &calendarsHandler{
-		calRepo: calRepo,
+		calService: calendarService,
 	}
 }
