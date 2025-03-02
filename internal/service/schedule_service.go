@@ -21,6 +21,7 @@ type ScheduleService interface {
 }
 
 type scheduleService struct {
+	transaction  repository.Transaction
 	scheduleRepo repository.ScheduleRepository
 }
 
@@ -59,7 +60,12 @@ func (s *scheduleService) CreateSchedule(calendarId string, data *dto.ScheduleIn
 		}
 	}
 
-	if err := s.scheduleRepo.Create(insert); err != nil {
+	tx := s.transaction.Begin()
+	defer tx.Rollback()
+
+	scheduleRepo := s.scheduleRepo.InjectionTx(tx)
+
+	if err := scheduleRepo.Create(insert); err != nil {
 		return nil, err
 	}
 
@@ -67,11 +73,11 @@ func (s *scheduleService) CreateSchedule(calendarId string, data *dto.ScheduleIn
 	for i := range employeeIds {
 		employeeIds[i] = data.Employees[i].Id
 	}
-
-	if err := s.scheduleRepo.UpdateEmployeeQueue(insert.Id.String(), employeeIds); err != nil {
+	if err := scheduleRepo.UpdateEmployeeQueue(insert.Id.String(), employeeIds); err != nil {
 		return nil, err
 	}
 
+	tx.Commit()
 	return s.GetSchedule(insert.Id.String())
 
 }
@@ -98,15 +104,32 @@ func (s *scheduleService) UpdateSchedule(scheduleId string, data *dto.ScheduleIn
 }
 
 func (s *scheduleService) DeleteSchedule(scheduleId string) error {
-	return s.scheduleRepo.Delete("id = ?", scheduleId)
+
+	tx := s.transaction.Begin()
+	defer tx.Rollback()
+
+	scheduleRepo := s.scheduleRepo.InjectionTx(tx)
+
+	if err := scheduleRepo.ClearEmployeeQueue(scheduleId); err != nil {
+		return err
+	}
+
+	if err := scheduleRepo.Delete("id = ?", scheduleId); err != nil {
+		return err
+	}
+
+	tx.Commit()
+	return nil
+
 }
 
 func (s *scheduleService) IsExist(scheduleId string) bool {
 	return s.scheduleRepo.IsExist("id = ?", scheduleId)
 }
 
-func NewScheduleService(scheduleRepo repository.ScheduleRepository) ScheduleService {
+func NewScheduleService(scheduleRepo repository.ScheduleRepository, transaction repository.Transaction) ScheduleService {
 	return &scheduleService{
 		scheduleRepo: scheduleRepo,
+		transaction:  transaction,
 	}
 }

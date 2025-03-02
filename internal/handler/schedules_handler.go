@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
+	"schedule_table/internal/pkg/validator"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 
@@ -50,6 +51,10 @@ func (handler *scheduleHandler) CreateSchedule(c *gin.Context) (*dto.ScheduleInf
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
+	if err := validator.Validate(body); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
+	}
+
 	if len(body.MasterScheduleId) != 0 && !handler.scheduleService.IsExist(body.MasterScheduleId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrMasterScheduleNotFound)
 	}
@@ -69,6 +74,7 @@ func (handler *scheduleHandler) CreateSchedule(c *gin.Context) (*dto.ScheduleInf
 
 func (handler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ScheduleInfo, error) {
 
+	calendarId := c.Param("calendarId")
 	scheduleId := c.Param("scheduleId")
 	if !handler.scheduleService.IsExist(scheduleId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrScheduleNotFound)
@@ -77,6 +83,18 @@ func (handler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ScheduleInf
 	var body dto.ScheduleInfoRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
+	}
+
+	if err := validator.Validate(body); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
+	}
+
+	employeeIds := make([]string, len(body.Employees))
+	for i := range employeeIds {
+		employeeIds[i] = body.Employees[i].Id
+	}
+	if !handler.employeeService.EmployeesIsExistCalendar(calendarId, employeeIds) {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrEmployeeNotFound)
 	}
 
 	return handler.scheduleService.UpdateSchedule(scheduleId, &body)
@@ -92,9 +110,13 @@ func (handler *scheduleHandler) DeleteSchedule(c *gin.Context) error {
 		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrScheduleNotFound)
 	}
 
+	if err := handler.scheduleService.DeleteSchedule(scheduleId); err != nil {
+		return err
+	}
+
 	// start transaction and delete task and relation before delete schedule
 
-	return handler.scheduleService.DeleteSchedule(scheduleId)
+	return nil
 
 }
 

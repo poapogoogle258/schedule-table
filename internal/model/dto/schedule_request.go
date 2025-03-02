@@ -13,7 +13,7 @@ import (
 type Recurrence struct {
 	Freq      int8  `json:"freq" validate:"required,min=0,max=6"`
 	Interval  int32 `json:"interval" validate:"required,min=1"`
-	Count     int32 `json:"count" validate:"required,min=0"`
+	Count     int32 `json:"count" validate:"min=0"`
 	Byweekday []int `json:"byweekday" validate:"required,byweekday"`
 	Bymonth   []int `json:"bymonth" validate:"required,bymonth"`
 }
@@ -40,7 +40,7 @@ type Schedule struct {
 type ScheduleInfoRequest struct {
 	Schedule
 	Recurrence Recurrence      `json:"recurrence" validate:"required"`
-	Employees  []*EmployeeInfo `json:"employees" validate:"required"`
+	Employees  []*EmployeeInfo `json:"employees" validate:"required,min=0"`
 }
 
 func (s *ScheduleInfoRequest) Recurrence_freq() int8 {

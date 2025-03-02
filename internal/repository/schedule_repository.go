@@ -11,6 +11,7 @@ import (
 type ScheduleRepository interface {
 	Repository[*dao.Schedule]
 	UpdateEmployeeQueue(scheduleId string, employeeIds []string) error
+	ClearEmployeeQueue(scheduleId string) error
 	FindOneWithAggregateEmployee(conds ...any) (*dao.Schedule, error)
 	FindManyWithAggregateEmployee(conds ...any) ([]*dao.Schedule, error)
 	InjectionTx(tx *gorm.DB) ScheduleRepository
@@ -28,31 +29,33 @@ func (repo *scheduleRepository) InjectionTx(tx *gorm.DB) ScheduleRepository {
 	}
 }
 
+func (repo *scheduleRepository) ClearEmployeeQueue(scheduleId string) error {
+	return repo.db.Where("schedule_id = ?", scheduleId).Delete(&dao.EmployeeQueue{}).Error
+}
+
 func (repo *scheduleRepository) UpdateEmployeeQueue(scheduleId string, employeeIds []string) error {
-
-	tx := repo.db.Begin()
-	tx.Rollback()
-
-	// delete old queue
-	if err := repo.db.Delete(&dao.EmployeeQueue{}, "schedule_id = ?", scheduleId).Error; err != nil {
-		return err
-	}
-	// create
-	insert := make([]*dao.EmployeeQueue, len(employeeIds))
-	for i, employeeId := range employeeIds {
-		insert[i] = &dao.EmployeeQueue{
-			ScheduleId: uuid.MustParse(scheduleId),
-			EmployeeId: uuid.MustParse(employeeId),
-			Queue:      int8(i + 1),
+	return repo.db.Transaction(func(tx *gorm.DB) error {
+		// delete old queue
+		if err := tx.Delete(&dao.EmployeeQueue{}, "schedule_id = ?", scheduleId).Error; err != nil {
+			return err
 		}
-	}
 
-	if err := repo.db.Create(insert).Error; err != nil {
-		return err
-	}
+		// create
+		insert := make([]*dao.EmployeeQueue, len(employeeIds))
+		for i, employeeId := range employeeIds {
+			insert[i] = &dao.EmployeeQueue{
+				ScheduleId: uuid.MustParse(scheduleId),
+				EmployeeId: uuid.MustParse(employeeId),
+				Queue:      int8(i + 1),
+			}
+		}
 
-	tx.Commit()
-	return nil
+		if err := tx.Create(insert).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 
 }
 

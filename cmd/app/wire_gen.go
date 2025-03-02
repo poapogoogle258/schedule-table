@@ -34,7 +34,7 @@ func Injector() *router.Handlers {
 	employeeService := service.NewEmployeeService(employeeRepository)
 	employeeHandler := handler.NewEmployeeHandler(employeeService, transaction)
 	scheduleRepository := repository.NewScheduleRepository(db)
-	scheduleService := service.NewScheduleService(scheduleRepository)
+	scheduleService := service.NewScheduleService(scheduleRepository, transaction)
 	scheduleHandler := handler.NewScheduleHandler(transaction, scheduleService, employeeService)
 	handlers := &router.Handlers{
 		Auth:           authHandler,
