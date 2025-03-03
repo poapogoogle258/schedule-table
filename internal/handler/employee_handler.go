@@ -78,8 +78,9 @@ func (handler *employeeHandler) GetEmployees(c *gin.Context) (*EmployeeTableResp
 }
 
 func (handler *employeeHandler) GetEmployee(c *gin.Context) (*dto.EmployeeInfo, error) {
+	calendarId := c.Param("calendarId")
 	employeeId := c.Param("employeeId")
-	if !handler.employeeService.IsExist(employeeId) {
+	if !handler.employeeService.IsExistOfCalendar(calendarId, employeeId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrEmployeeNotFount)
 	}
 
@@ -104,8 +105,9 @@ func (handler *employeeHandler) CreateEmployee(c *gin.Context) (*dto.EmployeeInf
 
 func (handler *employeeHandler) UpdateEmployee(c *gin.Context) (*dto.EmployeeInfo, error) {
 
+	calendarId := c.Param("calendarId")
 	employeeId := c.Param("employeeId")
-	if !handler.employeeService.IsExist(employeeId) {
+	if !handler.employeeService.IsExistOfCalendar(calendarId, employeeId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrEmployeeNotFount)
 	}
 
@@ -123,8 +125,9 @@ func (handler *employeeHandler) UpdateEmployee(c *gin.Context) (*dto.EmployeeInf
 
 func (handler *employeeHandler) DeleteEmployee(c *gin.Context) error {
 
+	calendarId := c.Param("calendarId")
 	employeeId := c.Param("employeeId")
-	if !handler.employeeService.IsExist(employeeId) {
+	if !handler.employeeService.IsExistOfCalendar(calendarId, employeeId) {
 		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrEmployeeNotFount)
 	}
 

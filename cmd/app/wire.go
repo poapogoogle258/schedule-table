@@ -21,6 +21,7 @@ var (
 		repository.NewUserRepository,
 		repository.NewEmployeeRepository,
 		repository.NewScheduleRepository,
+		repository.NewLeaveRepository,
 	)
 
 	serviceSet = wire.NewSet(
@@ -29,6 +30,7 @@ var (
 		service.NewEmployeeService,
 		service.NewCalendarService,
 		service.NewScheduleService,
+		service.NewLeaveService,
 	)
 
 	middlewareSet = wire.NewSet(
@@ -41,6 +43,7 @@ var (
 		handler.NewCalendarsHandler,
 		handler.NewEmployeeHandler,
 		handler.NewScheduleHandler,
+		handler.NewLeaveHandler,
 	)
 )
 

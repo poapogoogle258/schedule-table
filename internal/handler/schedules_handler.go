@@ -35,7 +35,12 @@ func (handler *scheduleHandler) GetAllSchedules(c *gin.Context) ([]*dto.Schedule
 }
 
 func (handler *scheduleHandler) GetSchedule(c *gin.Context) (*dto.ScheduleInfo, error) {
+
+	calendarId := c.Param("calendarId")
 	scheduleId := c.Param("scheduleId")
+	if !handler.scheduleService.IsExistOfCalendar(calendarId, scheduleId) {
+		return nil, pkg.NewErrorWithStatusCode(404, ErrScheduleNotFound)
+	}
 
 	return handler.scheduleService.GetSchedule(scheduleId)
 }
@@ -76,8 +81,8 @@ func (handler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ScheduleInf
 
 	calendarId := c.Param("calendarId")
 	scheduleId := c.Param("scheduleId")
-	if !handler.scheduleService.IsExist(scheduleId) {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrScheduleNotFound)
+	if !handler.scheduleService.IsExistOfCalendar(calendarId, scheduleId) {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, ErrScheduleNotFound)
 	}
 
 	var body dto.ScheduleInfoRequest
@@ -105,9 +110,10 @@ func (handler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ScheduleInf
 
 func (handler *scheduleHandler) DeleteSchedule(c *gin.Context) error {
 
+	calendarId := c.Param("calendarId")
 	scheduleId := c.Param("scheduleId")
-	if !handler.scheduleService.IsExist(scheduleId) {
-		return pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrScheduleNotFound)
+	if !handler.scheduleService.IsExistOfCalendar(calendarId, scheduleId) {
+		return pkg.NewErrorWithStatusCode(http.StatusNotFound, ErrScheduleNotFound)
 	}
 
 	if err := handler.scheduleService.DeleteSchedule(scheduleId); err != nil {

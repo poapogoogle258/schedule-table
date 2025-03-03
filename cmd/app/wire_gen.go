@@ -36,6 +36,9 @@ func Injector() *router.Handlers {
 	scheduleRepository := repository.NewScheduleRepository(db)
 	scheduleService := service.NewScheduleService(scheduleRepository, transaction)
 	scheduleHandler := handler.NewScheduleHandler(transaction, scheduleService, employeeService)
+	leaveRepository := repository.NewLeaveRepository(db)
+	leaveService := service.NewLeaveService(leaveRepository)
+	leaveHandler := handler.NewLeaveHandler(leaveService)
 	handlers := &router.Handlers{
 		Auth:           authHandler,
 		AuthJWTMiddle:  iAuthorizeJWTMiddleware,
@@ -43,6 +46,7 @@ func Injector() *router.Handlers {
 		CalendarMiddle: calendarMiddleware,
 		Employee:       employeeHandler,
 		Schedule:       scheduleHandler,
+		Leave:          leaveHandler,
 	}
 	return handlers
 }
@@ -50,11 +54,11 @@ func Injector() *router.Handlers {
 // wire.go:
 
 var (
-	repositorySet = wire.NewSet(repository.NewTransaction, repository.NewCalendarRepository, repository.NewUserRepository, repository.NewEmployeeRepository, repository.NewScheduleRepository)
+	repositorySet = wire.NewSet(repository.NewTransaction, repository.NewCalendarRepository, repository.NewUserRepository, repository.NewEmployeeRepository, repository.NewScheduleRepository, repository.NewLeaveRepository)
 
-	serviceSet = wire.NewSet(service.NewJWTAuthService, service.NewUserService, service.NewEmployeeService, service.NewCalendarService, service.NewScheduleService)
+	serviceSet = wire.NewSet(service.NewJWTAuthService, service.NewUserService, service.NewEmployeeService, service.NewCalendarService, service.NewScheduleService, service.NewLeaveService)
 
 	middlewareSet = wire.NewSet(middleware.NewAuthorizeJWTMiddleware, middleware.NewCalendarMiddleware)
 
-	handlerSet = wire.NewSet(handler.NewAuthHandler, handler.NewCalendarsHandler, handler.NewEmployeeHandler, handler.NewScheduleHandler)
+	handlerSet = wire.NewSet(handler.NewAuthHandler, handler.NewCalendarsHandler, handler.NewEmployeeHandler, handler.NewScheduleHandler, handler.NewLeaveHandler)
 )

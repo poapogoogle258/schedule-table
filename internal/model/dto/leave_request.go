@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type TaskRequest struct {
+type LeaveRequest struct {
 	Employee    EmployeeInfo `json:"employee"`
 	TypeLeave   string       `json:"type"`
 	Description string       `json:"description"`
@@ -16,11 +16,11 @@ type TaskRequest struct {
 }
 
 // dto -> dao
-func (t *TaskRequest) EmployeeId() uuid.UUID {
+func (t *LeaveRequest) EmployeeId() uuid.UUID {
 	return uuid.MustParse(t.Employee.Id)
 }
 
-func (t *TaskRequest) Type() dao.LeaveType {
+func (t *LeaveRequest) Type() dao.LeaveType {
 	switch t.TypeLeave {
 
 	case "Sick":
@@ -34,7 +34,7 @@ func (t *TaskRequest) Type() dao.LeaveType {
 	}
 }
 
-type TaskInfo struct {
+type LeaveInfo struct {
 	Id          string       `json:"id"`
 	Employee    EmployeeInfo `json:"employee"`
 	Type        string       `json:"type"`

@@ -18,6 +18,7 @@ type ScheduleService interface {
 	UpdateSchedule(scheduleId string, data *dto.ScheduleInfoRequest) (*dto.ScheduleInfo, error)
 	DeleteSchedule(scheduleId string) error
 	IsExist(scheduleId string) bool
+	IsExistOfCalendar(calendarId string, scheduleId string) bool
 }
 
 type scheduleService struct {
@@ -125,6 +126,10 @@ func (s *scheduleService) DeleteSchedule(scheduleId string) error {
 
 func (s *scheduleService) IsExist(scheduleId string) bool {
 	return s.scheduleRepo.IsExist("id = ?", scheduleId)
+}
+
+func (s *scheduleService) IsExistOfCalendar(calendarId string, scheduleId string) bool {
+	return s.scheduleRepo.IsExist("calendar_id = ? AND id = ?", calendarId, scheduleId)
 }
 
 func NewScheduleService(scheduleRepo repository.ScheduleRepository, transaction repository.Transaction) ScheduleService {

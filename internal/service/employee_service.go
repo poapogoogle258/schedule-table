@@ -21,6 +21,7 @@ type EmployeeService interface {
 	UpdateEmployee(employeeId string, info *dto.EmployeeInfoRequest) (*dto.EmployeeInfo, error)
 	DeleteEmployee(employeeId string) error
 	EmployeesIsExistCalendar(calendarId string, employeeIds []string) bool
+	IsExistOfCalendar(calendarId string, employeeId string) bool
 	InjectionTx(tx *gorm.DB) EmployeeService
 }
 
@@ -125,6 +126,10 @@ func (s *employeeService) EmployeesIsExistCalendar(calendarId string, employeeId
 	}
 
 	return true
+}
+
+func (s *employeeService) IsExistOfCalendar(calendarId string, employeeId string) bool {
+	return s.employeeRepo.IsExist("id = ? AND calendar_id = ? ", calendarId, employeeId)
 }
 
 func NewEmployeeService(employeeRepository repository.EmployeeRepository) EmployeeService {

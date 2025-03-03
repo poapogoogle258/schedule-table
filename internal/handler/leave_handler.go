@@ -1,15 +1,26 @@
 package handler
 
 import (
+	"errors"
+	"net/http"
 	"schedule_table/internal/model/dto"
+	"schedule_table/internal/pkg"
+	"schedule_table/internal/pkg/validator"
 	"schedule_table/internal/service"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	ErrLeaveNotFound = errors.New("leave not found")
+)
+
 type LeaveHandler interface {
-	FindAllLeavesOfCalendar(c *gin.Context) ([]*dto.TaskInfo, error)
+	FindAllLeavesOfCalendar(c *gin.Context) ([]*dto.LeaveInfo, error)
+	FindLeaveIdOfCalendar(c *gin.Context) (*dto.LeaveInfo, error)
+	CreateLeave(c *gin.Context) (*dto.LeaveInfo, error)
+	ChangeLeaveStatus(c *gin.Context) (*dto.LeaveInfo, error)
 }
 
 type leaveHandler struct {
@@ -21,7 +32,7 @@ type findTasksOfRangeQuery struct {
 	end   time.Time `form:"end" binding:"required"`
 }
 
-func (h *leaveHandler) FindAllLeavesOfCalendar(c *gin.Context) ([]*dto.TaskInfo, error) {
+func (h *leaveHandler) FindAllLeavesOfCalendar(c *gin.Context) ([]*dto.LeaveInfo, error) {
 	calendarId := c.Param("calendarId")
 	var query findTasksOfRangeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -29,6 +40,49 @@ func (h *leaveHandler) FindAllLeavesOfCalendar(c *gin.Context) ([]*dto.TaskInfo,
 	}
 
 	return h.leaveService.FindAllLeavesOfCalendar(calendarId, query.start, query.end)
+}
+
+func (h *leaveHandler) FindLeaveIdOfCalendar(c *gin.Context) (*dto.LeaveInfo, error) {
+	calendarId := c.Param("calendarId")
+	leaveId := c.Param("leaveId")
+
+	if !h.leaveService.IsExistOfCalendar(calendarId, leaveId) {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, ErrLeaveNotFound)
+	}
+
+	return h.leaveService.FindOndLeave(leaveId)
+}
+
+func (h *leaveHandler) CreateLeave(c *gin.Context) (*dto.LeaveInfo, error) {
+	calendarId := c.Param("calendarId")
+	var body = &dto.LeaveRequest{}
+	if err := c.ShouldBindJSON(body); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
+	}
+
+	if err := validator.Validate(body); err != nil {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
+	}
+
+	return h.leaveService.CreateLeave(calendarId, body)
+
+}
+
+func (h *leaveHandler) ChangeLeaveStatus(c *gin.Context) (*dto.LeaveInfo, error) {
+	calendarId := c.Param("calendarId")
+	leaveId := c.Param("leaveId")
+	newStatus := c.Param("newStatus")
+
+	if !h.leaveService.IsExistOfCalendar(calendarId, leaveId) {
+		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, ErrLeaveNotFound)
+	}
+
+	if err := h.leaveService.ChangeStatusLeave(leaveId, newStatus); err != nil {
+		return nil, err
+	}
+
+	return h.leaveService.FindOndLeave(leaveId)
+
 }
 
 func NewLeaveHandler(leaveService service.LeaveService) LeaveHandler {

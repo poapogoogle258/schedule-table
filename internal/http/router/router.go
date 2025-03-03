@@ -22,6 +22,7 @@ type Handlers struct {
 	CalendarMiddle middleware.CalendarMiddleware
 	Employee       handler.EmployeeHandler
 	Schedule       handler.ScheduleHandler
+	Leave          handler.LeaveHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -71,6 +72,11 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			calendar.PATCH("/schedules/:scheduleId", pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
 			calendar.DELETE("/schedules/:scheduleId", pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
 
+			// leave path
+			calendar.GET("/leaves", pkg.BuildGetController(handlers.Leave.FindAllLeavesOfCalendar))
+			calendar.POST("/leaves", pkg.BuildPostController(handlers.Leave.CreateLeave))
+			calendar.GET("/leaves/:leaveId", pkg.BuildGetController(handlers.Leave.FindLeaveIdOfCalendar))
+			calendar.POST("/leaves/:leaveId/:newStatus", pkg.BuildGetController(handlers.Leave.ChangeLeaveStatus))
 		}
 
 	}
