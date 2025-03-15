@@ -1,11 +1,31 @@
 package logger
 
 import (
+	"bytes"
 	"os"
+
+	"encoding/json"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+const (
+	empty = ""
+	tab   = "\t"
+)
+
+func PrettyJson(data interface{}) (string, error) {
+	buffer := new(bytes.Buffer)
+	encoder := json.NewEncoder(buffer)
+	encoder.SetIndent(empty, tab)
+
+	err := encoder.Encode(data)
+	if err != nil {
+		return empty, err
+	}
+	return buffer.String(), nil
+}
 
 type fnHook func(data map[string]interface{}) error
 type hook struct {
@@ -35,12 +55,17 @@ func fieldsToMap(fields ...zap.Field) map[string]interface{} {
 	return jsonFields
 }
 
-func Debug(message string, fields ...zap.Field) {
-	logger.Debug(message, fields...)
+func Debug(message string, conds ...any) {
+	jsonString, _ := PrettyJson(conds)
+	logger.Debug(message + " " + jsonString)
 }
 
 func Info(message string, fields ...zap.Field) {
 	logger.Info(message, fields...)
+}
+
+func Warn(message string, fields ...zap.Field) {
+	logger.Warn(message, fields...)
 }
 
 func Error(message string, fields ...zap.Field) {
@@ -62,7 +87,6 @@ func Message(message string, fields ...zap.Field) {
 			return
 		}
 	}
-
 }
 
 // check massage match with hooks
@@ -74,29 +98,44 @@ func AddHook(message string, callback fnHook) {
 }
 
 func InitLogger() {
-	file := mustOpenFile("../../info.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	fileError := mustOpenFile("../../error.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	// File encoder config (full JSON logging)
+	fileEncoderConfig := zap.NewProductionEncoderConfig()
+	fileEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	// Console encoder config (minimal output)
+	consoleEncodeConfig := zap.NewDevelopmentEncoderConfig()
+	consoleEncodeConfig.TimeKey = "time"
+	consoleEncodeConfig.LevelKey = "level"
+	consoleEncodeConfig.NameKey = ""       // disable logger name
+	consoleEncodeConfig.CallerKey = ""     // disable caller
+	consoleEncodeConfig.FunctionKey = ""   // disable function name
+	consoleEncodeConfig.StacktraceKey = "" // disable stacktrace
+	consoleEncodeConfig.MessageKey = "msg"
+	consoleEncodeConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	consoleEncodeConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zap.ErrorLevel
 	})
 
-	allPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return true
+	ShowLogLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zap.InfoLevel
 	})
 
-	fileEncoder := zapcore.NewJSONEncoder(encoderConfig)
-	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+	fileEncoder := zapcore.NewJSONEncoder(fileEncoderConfig)
+	consoleEncoder := zapcore.NewConsoleEncoder(consoleEncodeConfig)
 
 	core := zapcore.NewTee(
-		zapcore.NewCore(fileEncoder, zapcore.AddSync(file), highPriority),
-		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), allPriority),
+		zapcore.NewCore(fileEncoder, zapcore.AddSync(fileError), highPriority),
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), ShowLogLevel),
 	)
 
-	logger = zap.New(core)
-
+	// Create logger with development options
+	logger = zap.New(core,
+		zap.AddStacktrace(zap.ErrorLevel), // Add stack trace for file logging
+	)
 }
 
 func Sync() {

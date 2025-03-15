@@ -27,7 +27,7 @@ func CreateRecurrenceTasks(schedule *dao.Schedule, start time.Time, end time.Tim
 	timeEnd := parseHrTime(schedule.Hr_end)
 	useNumberPeople := int(schedule.UseNumberPeople)
 	recurrenceFreq := int(schedule.Recurrence_freq)
-	recurrenceInterval := int(schedule.Recurrence_count)
+	recurrenceInterval := int(schedule.Recurrence_interval)
 
 	recurrenceByMonth := []int{}
 	if schedule.Recurrence_bymonth != "" {
@@ -69,6 +69,7 @@ func CreateRecurrenceTasks(schedule *dao.Schedule, start time.Time, end time.Tim
 	duration := hrTimeDuration(timeStart, timeEnd)
 
 	recurrenceSchedule := scheduleRule.All()
+
 	tasks := make([]*dao.Task, 0, len(recurrenceSchedule)*useNumberPeople)
 
 	for i := range recurrenceSchedule {

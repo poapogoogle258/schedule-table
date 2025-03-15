@@ -22,7 +22,7 @@ func readFile(path string) []byte {
 
 func main() {
 
-	godotenv.Load("../../.env")
+	godotenv.Load("../.env")
 	db := database.ConnectPostgresql()
 	logger = zap.Must(zap.NewDevelopment())
 

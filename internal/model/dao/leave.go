@@ -47,7 +47,7 @@ type Leave struct {
 	Date        time.Time   `gorm:"column:date" json:"date"`
 	Tzid        string      `gorm:"column:tzid;default:Asia/Bangkok" json:"tzid"`
 	Status      LeaveStatus `gorm:"column:status;default:0" json:"status"`
-	Employee    Employee    `gorm:"references:employee_id"`
+	Employee    Employee    `gorm:"foreignKey:employee_id"`
 	AcceptAt    *time.Time  `gorm:"column:accept_at" json:"accept_at"`
 	RejectAt    *time.Time  `gorm:"column:reject_at" json:"reject_at"`
 	CancelAt    *time.Time  `gorm:"column:cancel_at" json:"cancel_at"`

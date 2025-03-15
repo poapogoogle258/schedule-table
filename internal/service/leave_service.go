@@ -25,11 +25,11 @@ type leaveService struct {
 }
 
 func (s *leaveService) IsExistOfCalendar(calendarId string, taskId string) bool {
-	return s.leaveRepo.IsExist("id = ? AND calendar_id = ?", calendarId, taskId)
+	return s.leaveRepo.IsExist("id = ? AND calendar_id = ?", taskId, calendarId)
 }
 
 func (s *leaveService) FindAllLeavesOfCalendar(calendarId string, start time.Time, end time.Time) ([]*dto.LeaveInfo, error) {
-	leaves, err := s.leaveRepo.FindManyWithAggregate([]string{"Employee"}, "calendar_id = ? AND start_time BETWEEN ? AND ?", calendarId, start, end)
+	leaves, err := s.leaveRepo.FindManyWithAggregate([]string{"Employee"}, "calendar_id = ? AND Date BETWEEN ? AND ?", calendarId, start, end)
 	if err != nil {
 		return nil, err
 	}

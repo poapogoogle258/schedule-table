@@ -129,7 +129,7 @@ func (s *employeeService) EmployeesIsExistCalendar(calendarId string, employeeId
 }
 
 func (s *employeeService) IsExistOfCalendar(calendarId string, employeeId string) bool {
-	return s.employeeRepo.IsExist("id = ? AND calendar_id = ? ", calendarId, employeeId)
+	return s.employeeRepo.IsExist("id = ? AND calendar_id = ? ", employeeId, calendarId)
 }
 
 func NewEmployeeService(employeeRepository repository.EmployeeRepository) EmployeeService {

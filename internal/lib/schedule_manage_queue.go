@@ -2,8 +2,6 @@ package lib
 
 import (
 	"errors"
-	"fmt"
-	"schedule_table/internal/constant"
 	"schedule_table/internal/model/dao"
 	"schedule_table/util"
 	"slices"
@@ -73,8 +71,6 @@ func (sm *scheduleManageQueue) Commit(task *dao.Task) error {
 		sm.mapListCommitted[task.ScheduleId].Add(employee.Id)
 		employee.AddTask(task)
 
-		task.Status = constant.TaskCommitted
-		fmt.Println("task:", task.RecurrenceId, " commitBy:", employee.Id.String())
 		break
 
 	}

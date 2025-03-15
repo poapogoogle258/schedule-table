@@ -30,7 +30,7 @@ func BuildPostController[T any](handler func(c *gin.Context) (T, error)) func(c 
 	}
 }
 
-func BuildPatchController[T any](handler func(c *gin.Context) (T, error)) func(c *gin.Context) {
+func BuildPutController[T any](handler func(c *gin.Context) (T, error)) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		defer PanicHandler(c)
 

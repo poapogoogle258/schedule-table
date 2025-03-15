@@ -18,6 +18,8 @@ vendor
 .idea
 
 #config
-.env
+.env*
 
-/upload
+upload
+tmp
+log

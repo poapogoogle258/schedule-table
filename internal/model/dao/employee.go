@@ -15,7 +15,7 @@ type Employee struct {
 	Position    string    `gorm:"column:position" json:"position"`
 	Email       string    `gorm:"column:email" json:"email"`
 	Telephone   string    `gorm:"column:telephone" json:"telephone"`
-	Leaves      []*Leave  `gorm:"foreignKey:member_id" json:"leaves"`
+	Leaves      []*Leave  `gorm:"foreignKey:employee_id" json:"leaves"`
 	BaseModel
 	SoftDelete
 }

@@ -11,36 +11,36 @@ import (
 )
 
 type Recurrence struct {
-	Freq      int8  `json:"freq" validate:"required,min=0,max=6"`
-	Interval  int32 `json:"interval" validate:"required,min=1"`
-	Count     int32 `json:"count" validate:"min=0"`
-	Byweekday []int `json:"byweekday" validate:"required,byweekday"`
-	Bymonth   []int `json:"bymonth" validate:"required,bymonth"`
+	Freq      int8  `json:"freq" binding:"required,min=0,max=6"`
+	Interval  int32 `json:"interval" binding:"required,min=1"`
+	Count     int32 `json:"count" binding:"required,min=0"`
+	Byweekday []int `json:"byweekday" binding:"required,byweekday"`
+	Bymonth   []int `json:"bymonth" binding:"required,bymonth"`
 }
 
 type Schedule struct {
-	MasterScheduleId string     `json:"master_id"`
-	Name             string     `json:"name" validate:"required"`
-	Description      string     `json:"description"`
-	ImageURL         string     `json:"imageURL" validate:"required,url"`
-	Color            string     `json:"color" validate:"required,hexcolor"`
-	Priority         int8       `json:"priority" validate:"required,min=1,max=99"`
-	Start            time.Time  `json:"start" validate:"required"`
-	End              *time.Time `json:"end"`
-	Hr_start         string     `json:"hr_start" validate:"required,hhmm"`
-	Hr_end           string     `json:"hr_end" validate:"required,hhmm"`
-	Tzid             string     `json:"tzid" validate:"required"`
-	BreakTime        uint32     `json:"breaktime" validate:"required,min=0,max=1440"`
-	RotationCycle    int        `json:"rotation_cycle" validate:"required,min=0"`
-	UseNumberPeople  int8       `json:"use_number_people" validate:"required,gte=1"`
+	MasterScheduleId string     `json:"master_id" binding:"required"`
+	Name             string     `json:"name" binding:"required"`
+	Description      string     `json:"description" binding:"required"`
+	ImageURL         string     `json:"imageURL" binding:"required,url"`
+	Color            string     `json:"color" binding:"required,hexcolor"`
+	Priority         int8       `json:"priority" binding:"required,min=1,max=99"`
+	Start            time.Time  `json:"start" binding:"required" time_format:"2006-01-02"`
+	End              *time.Time `json:"end" binding:"omitempty" time_format:"2006-01-02"`
+	Hr_start         string     `json:"hr_start" binding:"required,hhmm"`
+	Hr_end           string     `json:"hr_end" binding:"required,hhmm"`
+	Tzid             string     `json:"tzid" binding:"required"`
+	BreakTime        uint32     `json:"breaktime" binding:"required,min=0,max=1440"`
+	RotationCycle    int        `json:"rotation_cycle" binding:"required,min=0"`
+	UseNumberPeople  int8       `json:"use_number_people" binding:"required,gte=1"`
 }
 
 // schedule dto -> dao
 
 type ScheduleInfoRequest struct {
 	Schedule
-	Recurrence Recurrence      `json:"recurrence" validate:"required"`
-	Employees  []*EmployeeInfo `json:"employees" validate:"required,min=0"`
+	Recurrence Recurrence      `json:"recurrence" binding:"required"`
+	Employees  []*EmployeeInfo `json:"employees" binding:"required,min=0"`
 }
 
 func (s *ScheduleInfoRequest) Recurrence_freq() int8 {

@@ -14,7 +14,7 @@ type Schedule struct {
 	Color                string           `gorm:"column:color;default:#000000" json:"color"`
 	Name                 string           `gorm:"column:name" json:"name"`
 	Description          string           `gorm:"column:description;default:-" json:"description"`
-	ImageURL             string           `gorm:"column:imageURL;default:default-image-schedule.jpeg" json:"imageURL"`
+	ImageURL             string           `gorm:"column:image_url;default:default-image-schedule.jpeg" json:"image_url"`
 	Priority             int8             `gorm:"column:priority" json:"priority"`
 	Start                time.Time        `gorm:"column:start" json:"start"`
 	End                  *time.Time       `gorm:"column:end" json:"end"`

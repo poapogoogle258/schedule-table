@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
-	"schedule_table/internal/pkg/validator"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 	"schedule_table/util"
@@ -96,10 +95,6 @@ func (handler *employeeHandler) CreateEmployee(c *gin.Context) (*dto.EmployeeInf
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	if err := validator.Validate(body); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
-	}
-
 	return handler.employeeService.CreateEmployee(calendarId, &body)
 }
 
@@ -113,10 +108,6 @@ func (handler *employeeHandler) UpdateEmployee(c *gin.Context) (*dto.EmployeeInf
 
 	var body dto.EmployeeInfoRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
-	}
-
-	if err := validator.Validate(body); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 

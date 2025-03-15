@@ -39,6 +39,9 @@ func Injector() *router.Handlers {
 	leaveRepository := repository.NewLeaveRepository(db)
 	leaveService := service.NewLeaveService(leaveRepository)
 	leaveHandler := handler.NewLeaveHandler(leaveService)
+	taskRepository := repository.NewTaskRepository(db)
+	taskService := service.NewTaskService(taskRepository, transaction)
+	taskHandler := handler.NewTaskHandler(taskService, calendarService)
 	handlers := &router.Handlers{
 		Auth:           authHandler,
 		AuthJWTMiddle:  iAuthorizeJWTMiddleware,
@@ -47,6 +50,7 @@ func Injector() *router.Handlers {
 		Employee:       employeeHandler,
 		Schedule:       scheduleHandler,
 		Leave:          leaveHandler,
+		Task:           taskHandler,
 	}
 	return handlers
 }
@@ -54,11 +58,11 @@ func Injector() *router.Handlers {
 // wire.go:
 
 var (
-	repositorySet = wire.NewSet(repository.NewTransaction, repository.NewCalendarRepository, repository.NewUserRepository, repository.NewEmployeeRepository, repository.NewScheduleRepository, repository.NewLeaveRepository)
+	repositorySet = wire.NewSet(repository.NewTransaction, repository.NewCalendarRepository, repository.NewUserRepository, repository.NewEmployeeRepository, repository.NewScheduleRepository, repository.NewLeaveRepository, repository.NewTaskRepository)
 
-	serviceSet = wire.NewSet(service.NewJWTAuthService, service.NewUserService, service.NewEmployeeService, service.NewCalendarService, service.NewScheduleService, service.NewLeaveService)
+	serviceSet = wire.NewSet(service.NewJWTAuthService, service.NewUserService, service.NewEmployeeService, service.NewCalendarService, service.NewScheduleService, service.NewLeaveService, service.NewTaskService)
 
 	middlewareSet = wire.NewSet(middleware.NewAuthorizeJWTMiddleware, middleware.NewCalendarMiddleware)
 
-	handlerSet = wire.NewSet(handler.NewAuthHandler, handler.NewCalendarsHandler, handler.NewEmployeeHandler, handler.NewScheduleHandler, handler.NewLeaveHandler)
+	handlerSet = wire.NewSet(handler.NewAuthHandler, handler.NewCalendarsHandler, handler.NewEmployeeHandler, handler.NewScheduleHandler, handler.NewLeaveHandler, handler.NewTaskHandler)
 )

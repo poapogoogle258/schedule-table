@@ -6,7 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidateWeekday(fl validator.FieldLevel) bool {
+func Weekday(fl validator.FieldLevel) bool {
 
 	if v := fl.Field(); v.Kind() != reflect.Slice {
 		return false
@@ -27,7 +27,7 @@ func ValidateWeekday(fl validator.FieldLevel) bool {
 
 }
 
-func ValidateMonth(fl validator.FieldLevel) bool {
+func Month(fl validator.FieldLevel) bool {
 
 	if v := fl.Field(); v.Kind() != reflect.Slice {
 		return false

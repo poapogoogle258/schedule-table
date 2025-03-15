@@ -22,6 +22,7 @@ func (e *Employee) AddTask(task *dao.Task) {
 	e.TimeLine.AddWork(work)
 	e.TimeLine.AddWork(rest)
 
+	task.OriginalEmployeeId = &e.Id
 	task.EmployeeId = &e.Id
 	task.Person = e.Data
 }

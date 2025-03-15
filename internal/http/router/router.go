@@ -23,6 +23,7 @@ type Handlers struct {
 	Employee       handler.EmployeeHandler
 	Schedule       handler.ScheduleHandler
 	Leave          handler.LeaveHandler
+	Task           handler.TaskHandler
 }
 
 func NewRouter(handlers *Handlers) *gin.Engine {
@@ -62,14 +63,14 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			calendar.GET("/employees", pkg.BuildGetController(handlers.Employee.GetEmployees))
 			calendar.POST("/employees", pkg.BuildPostController(handlers.Employee.CreateEmployee))
 			calendar.GET("/employees/:employeeId", pkg.BuildGetController(handlers.Employee.GetEmployee))
-			calendar.PATCH("/employees/:employeeId", pkg.BuildPatchController(handlers.Employee.UpdateEmployee))
+			calendar.PUT("/employees/:employeeId", pkg.BuildPutController(handlers.Employee.UpdateEmployee))
 			calendar.DELETE("/employees/:employeeId", pkg.BuildDeleteController(handlers.Employee.DeleteEmployee))
 
 			// schedule path
 			calendar.GET("/schedules", pkg.BuildGetController(handlers.Schedule.GetAllSchedules))
 			calendar.POST("/schedules", pkg.BuildPostController(handlers.Schedule.CreateSchedule))
 			calendar.GET("/schedules/:scheduleId", pkg.BuildGetController(handlers.Schedule.GetSchedule))
-			calendar.PATCH("/schedules/:scheduleId", pkg.BuildPatchController(handlers.Schedule.UpdateSchedule))
+			calendar.PUT("/schedules/:scheduleId", pkg.BuildPutController(handlers.Schedule.UpdateSchedule))
 			calendar.DELETE("/schedules/:scheduleId", pkg.BuildDeleteController(handlers.Schedule.DeleteSchedule))
 
 			// leave path
@@ -77,6 +78,10 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			calendar.POST("/leaves", pkg.BuildPostController(handlers.Leave.CreateLeave))
 			calendar.GET("/leaves/:leaveId", pkg.BuildGetController(handlers.Leave.FindLeaveIdOfCalendar))
 			calendar.POST("/leaves/:leaveId/:newStatus", pkg.BuildGetController(handlers.Leave.ChangeLeaveStatus))
+
+			// task path
+			calendar.GET("/tasks", pkg.BuildGetController(handlers.Task.GetTasksOfCalendarId))
+			calendar.PUT("/tasks/:taskId", pkg.BuildPutController(handlers.Task.UpdateTasksOfCalendarId))
 		}
 
 	}

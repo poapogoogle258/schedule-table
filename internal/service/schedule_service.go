@@ -129,7 +129,7 @@ func (s *scheduleService) IsExist(scheduleId string) bool {
 }
 
 func (s *scheduleService) IsExistOfCalendar(calendarId string, scheduleId string) bool {
-	return s.scheduleRepo.IsExist("calendar_id = ? AND id = ?", calendarId, scheduleId)
+	return s.scheduleRepo.IsExist("id = ? AND calendar_id = ?", scheduleId, calendarId)
 }
 
 func NewScheduleService(scheduleRepo repository.ScheduleRepository, transaction repository.Transaction) ScheduleService {

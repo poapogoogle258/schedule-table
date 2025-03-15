@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
-	"schedule_table/internal/pkg/validator"
 	"schedule_table/internal/repository"
 	"schedule_table/internal/service"
 
@@ -56,10 +55,6 @@ func (handler *scheduleHandler) CreateSchedule(c *gin.Context) (*dto.ScheduleInf
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
-	if err := validator.Validate(body); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
-	}
-
 	if len(body.MasterScheduleId) != 0 && !handler.scheduleService.IsExist(body.MasterScheduleId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, ErrMasterScheduleNotFound)
 	}
@@ -87,10 +82,6 @@ func (handler *scheduleHandler) UpdateSchedule(c *gin.Context) (*dto.ScheduleInf
 
 	var body dto.ScheduleInfoRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
-	}
-
-	if err := validator.Validate(body); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 

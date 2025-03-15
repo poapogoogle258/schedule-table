@@ -1,13 +1,10 @@
 package constant
 
-import "errors"
-
 type TaskStatus int8
 
 const (
-	TaskGenerated TaskStatus = iota
+	TaskGenerated TaskStatus = iota // is new task
 	TaskCreated
-	TaskCommitted
 	TaskReserved
 	TaskOvertime
 	TaskCanceled
@@ -19,8 +16,6 @@ func (status TaskStatus) ToString() string {
 		return "Generated"
 	case TaskCreated:
 		return "Created"
-	case TaskCommitted:
-		return "Submitted"
 	case TaskReserved:
 		return "Reserved"
 	case TaskOvertime:
@@ -32,12 +27,4 @@ func (status TaskStatus) ToString() string {
 	}
 }
 
-var ErrTaskStatusNotExist = errors.New("task status not exist")
-
-func ParseTaskStatus(status int8) (TaskStatus, error) {
-	if status == 0 || status == 1 || status == 2 || status == 3 {
-		return TaskStatus(status), nil
-	}
-
-	return 0, ErrTaskStatusNotExist
-}
+// var ErrTaskStatusNotExist = errors.New("task status not exist")

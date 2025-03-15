@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var scheduleColumns = []string{"Id", "MasterScheduleId", "CalendarId", "Name", "Description", "ImageURL", "Priority", "Start", "End", "Hr_start", "Hr_end", "Tzid", "BreakTime", "UseNumberPeople", "Recurrence_freq", "Recurrence_interval", "Recurrence_count", "Recurrence_bymonth", "Recurrence_byweekday"}
+var scheduleColumns = []string{"Id", "MasterScheduleId", "CalendarId", "Name", "Description", "ImageURL", "Priority", "Start", "End", "Hr_start", "Hr_end", "Tzid", "BreakTime", "UseNumberPeople", "Recurrence_freq", "Recurrence_interval", "Recurrence_count", "Recurrence_bymonth", "Recurrence_byweekday", "Color", "RotationCycle"}
 
 type member struct {
 	Id          string `json:"id"`
@@ -55,6 +55,7 @@ type Schedule struct {
 	Recurrence       recurrence `json:"recurrence"`
 	Members          []member   `json:"members"`
 	RotationCycle    int        `json:"rotation_cycle"`
+	Color            string     `json:"color"`
 }
 
 // json -> dao
@@ -104,6 +105,7 @@ var ScheduleInit = &gormigrate.Migration{
 		}
 
 		// insert schedule
+
 		if err := tx.Select(scheduleColumns).Create(&insert).Error; err != nil {
 			tx.Rollback()
 			return err

@@ -33,6 +33,7 @@ func ConnectPostgresql() *gorm.DB {
 			password = os.Getenv("DB_PASSWORD")
 			dsn      = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Bangkok", host, username, password, name, port)
 		)
+
 		db = mustConnectDb(postgres.Open(dsn), &gorm.Config{})
 
 	}

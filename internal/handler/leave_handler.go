@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"schedule_table/internal/model/dto"
 	"schedule_table/internal/pkg"
-	"schedule_table/internal/pkg/validator"
 	"schedule_table/internal/service"
 	"time"
 
@@ -28,8 +27,8 @@ type leaveHandler struct {
 }
 
 type findTasksOfRangeQuery struct {
-	start time.Time `form:"start" binding:"required"`
-	end   time.Time `form:"end" binding:"required"`
+	start time.Time `form:"start" binding:"required" time_format:"2006-01-02"`
+	end   time.Time `form:"end" binding:"required" time_format:"2006-01-02"`
 }
 
 func (h *leaveHandler) FindAllLeavesOfCalendar(c *gin.Context) ([]*dto.LeaveInfo, error) {
@@ -54,13 +53,11 @@ func (h *leaveHandler) FindLeaveIdOfCalendar(c *gin.Context) (*dto.LeaveInfo, er
 }
 
 func (h *leaveHandler) CreateLeave(c *gin.Context) (*dto.LeaveInfo, error) {
+
+	// TO DO: validate date to create and commit
 	calendarId := c.Param("calendarId")
 	var body = &dto.LeaveRequest{}
 	if err := c.ShouldBindJSON(body); err != nil {
-		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
-	}
-
-	if err := validator.Validate(body); err != nil {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusBadRequest, err)
 	}
 
@@ -73,6 +70,8 @@ func (h *leaveHandler) ChangeLeaveStatus(c *gin.Context) (*dto.LeaveInfo, error)
 	leaveId := c.Param("leaveId")
 	newStatus := c.Param("newStatus")
 
+	// TO DO: validate date to create and commit
+
 	if !h.leaveService.IsExistOfCalendar(calendarId, leaveId) {
 		return nil, pkg.NewErrorWithStatusCode(http.StatusNotFound, ErrLeaveNotFound)
 	}
@@ -82,6 +81,8 @@ func (h *leaveHandler) ChangeLeaveStatus(c *gin.Context) (*dto.LeaveInfo, error)
 	}
 
 	return h.leaveService.FindOndLeave(leaveId)
+
+	// TO DO: schedule to check leaveDoc not accept change status to cancel
 
 }
 
