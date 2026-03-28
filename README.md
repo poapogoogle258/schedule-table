@@ -1,4 +1,6 @@
 # Schedule_Table
+
+[![gitcgr](https://gitcgr.com/badge/poapogoogle258/schedule-table.svg)](https://gitcgr.com/poapogoogle258/schedule-table)
 project automate schedule resource management
 
 implement by golang programming use gin framework
